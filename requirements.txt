@@ -1,4 +1,5 @@
 streamlit
 reportlab
 gspread
+oauth2client
 google-auth
