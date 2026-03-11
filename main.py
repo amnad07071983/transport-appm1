@@ -4,10 +4,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 from datetime import datetime
 import io
+import os
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import cm
+from reportlab.lib.units import cm, inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Table, TableStyle
@@ -19,7 +20,7 @@ st.set_page_config(page_title="Logistics System Pro", layout="wide")
 try:
     pdfmetrics.registerFont(TTFont('ThaiFontBold', 'THSARABUN BOLD.ttf'))
 except:
-    st.error("⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf'")
+    st.error("⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' กรุณาตรวจสอบว่าไฟล์ฟอนต์อยู่ในโฟลเดอร์เดียวกับโค้ด")
 
 SHEET_ID = "1fl86CxqgxlXAYU63GQOdCrL2jbPvSUdoXd1ndQvjnBM"
 INV_SHEET = "Invoices"
@@ -42,12 +43,13 @@ def get_data_cached():
     except Exception:
         return pd.DataFrame(), pd.DataFrame()
 
+# โหลดข้อมูลเริ่มต้น
 try:
     client = init_sheet()
     inv_df, item_df = get_data_cached()
     ws_inv = client.worksheet(INV_SHEET)
     ws_item = client.worksheet(ITEM_SHEET)
-except:
+except Exception as e:
     inv_df, item_df = pd.DataFrame(), pd.DataFrame()
 
 # ================= 2. SESSION STATE & FORM RESET =================
@@ -79,25 +81,37 @@ if "invoice_items" not in st.session_state:
     reset_form()
 
 # ================= 3. CORE FUNCTIONS (PDF & LOGIC) =================
+
+def add_single_watermark(c, w, h):
+    """วาดลายน้ำรูปเดียว โดยปรับตำแหน่งลงมาจากกึ่งกลาง 1.5 นิ้ว"""
+    try:
+        c.saveState()
+        c.setFillAlpha(0.18) # ความเข้ม 18%
+        
+        img_w = 12*cm
+        img_h = 12*cm
+        
+        # คำนวณตำแหน่ง X (กึ่งกลางแนวนอน)
+        x = (w - img_w) / 2
+        
+        # คำนวณตำแหน่ง Y (กึ่งกลางแนวตั้ง - 1.5 นิ้ว)
+        # จุด 0,0 ของ ReportLab อยู่ที่มุมซ้ายล่าง ดังนั้นลบค่าออกคือการเลื่อนลง
+        center_y = (h - img_h) / 2
+        y = center_y - (1.5 * inch)
+        
+        c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+        c.restoreState()
+    except:
+        pass
+
 def next_inv_no(df):
-    """
-    สร้างเลขที่เอกสารใหม่ในรูปแบบ INV-YYYY-MM-XXXX
-    เช่น INV-2026-01-0001
-    หากขึ้นเดือนใหม่จะเริ่มนับ 0001 ใหม่
-    """
     now = datetime.now()
-    prefix = f"INV-{now.year}-{now.month:02d}" # ผลลัพธ์: INV-2026-01
-    
+    prefix = f"INV-{now.year}-{now.month:02d}"
     if df.empty or "invoice_no" not in df.columns:
         return f"{prefix}-0001"
-    
-    # กรองเฉพาะรายการที่ขึ้นต้นด้วย prefix ของเดือนปัจจุบัน
     current_month_docs = df[df["invoice_no"].astype(str).str.startswith(prefix)]
-    
     if current_month_docs.empty:
         return f"{prefix}-0001"
-    
-    # ดึงลำดับ 4 ตัวท้ายมาหาค่าสูงสุด
     try:
         last_no = current_month_docs["invoice_no"].iloc[-1]
         last_seq = int(str(last_no).split('-')[-1])
@@ -109,6 +123,11 @@ def create_pdf(inv, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
+    
+    # 1. วาดลายน้ำ
+    add_single_watermark(c, w, h)
+
+    # 2. เนื้อหา V1 (แสดงราคา)
     c.setFont("ThaiFontBold", 24) 
     c.drawString(2*cm, h-1.5*cm, str(inv.get('comp_name', '')))
     c.setFont("ThaiFontBold", 14)
@@ -124,6 +143,7 @@ def create_pdf(inv, items):
     c.setFont("ThaiFontBold", 14)
     c.drawString(2*cm, h-5.3*cm, f"ที่อยู่: {inv.get('address','')}")
     c.drawString(2*cm, h-6.1*cm, f"Ref Tax ID: {inv.get('ref_tax_id','-')} | Ref Receipt: {inv.get('ref_receipt_id','-')}")
+    
     transport_data = [
         [f"ทะเบียนรถ: {inv.get('car_id','')}", f"ออก: {inv.get('date_out','')} {inv.get('time_out','')}", f"สถานะบิล: {inv.get('doc_status','')}"],
         [f"ชื่อคนขับ: {inv.get('driver_name','')}", f"เข้า: {inv.get('date_in','')} {inv.get('time_in','')}", f"การชำระ: {inv.get('pay_status','')}"],
@@ -134,6 +154,7 @@ def create_pdf(inv, items):
     t_trans.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'ThaiFontBold', 12), ('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
     t_trans.wrapOn(c, 2*cm, h-9*cm)
     t_trans.drawOn(c, 2*cm, h-9*cm)
+    
     item_header = [["ลำดับ", "รายการสินค้า/บริการ", "หน่วย", "จำนวน", "ราคา/หน่วย", "รวมเงิน"]]
     item_rows = []
     total_qty = 0
@@ -142,11 +163,13 @@ def create_pdf(inv, items):
         item_rows.append([i+1, it.get("product", ""), it.get("unit", ""), f"{qty:,}", f"{float(it.get('price', 0)):,.2f}", f"{float(it.get('amount', 0)):,.2f}"])
         total_qty += qty
     item_rows.append(["", "ยอดรวมจำนวนทั้งสิ้น", "", f"{total_qty:,}", "", ""])
+    
     t_items = Table(item_header + item_rows, colWidths=[1.2*cm, 7.8*cm, 2*cm, 2*cm, 2*cm, 2*cm])
     t_items.setStyle(TableStyle([('FONT', (0,0), (-1,0), 'ThaiFontBold', 14), ('FONT', (0,1), (-1,-1), 'ThaiFontBold', 13), ('ALIGN', (0,0), (0,-1), 'CENTER'), ('ALIGN', (5,0), (5,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,0), (-1,0), 1, colors.black), ('LINEBELOW', (0,-2), (-1,-2), 0.5, colors.grey), ('FONT', (0,-1), (-1,-1), 'ThaiFontBold', 13)]))
     tw, th = t_items.wrapOn(c, 2*cm, h-17*cm)
     t_y = h - 10.5*cm - th
     t_items.drawOn(c, 2*cm, t_y)
+    
     curr_y = t_y - 1.2*cm
     c.setFont("ThaiFontBold", 13)
     c.drawString(2.2*cm, curr_y, f"หมายเหตุ: {inv.get('remark','-')}")
@@ -160,6 +183,7 @@ def create_pdf(inv, items):
     c.line(13*cm, curr_y-1.9*cm, 19*cm, curr_y-1.9*cm)
     c.drawRightString(16*cm, curr_y-2.8*cm, "ยอดสุทธิ:")
     c.drawRightString(19*cm, curr_y-2.8*cm, f"{float(inv.get('total', 0)):,.2f} บาท")
+    
     sig_y = 3.5*cm
     labels = [("ผู้รับสินค้า", inv.get('receiver_name','')), ("ผู้ส่งสินค้า", inv.get('sender_name','')), ("ผู้ตรวจสอบ", inv.get('checker_name','')), ("ผู้ออกบิล", inv.get('issuer_name',''))]
     for i, (lab, val) in enumerate(labels):
@@ -177,6 +201,11 @@ def create_pdf_v2(inv, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
+    
+    # 1. วาดลายน้ำ
+    add_single_watermark(c, w, h)
+
+    # 2. เนื้อหา V2 (แสดงจำนวน)
     c.setFont("ThaiFontBold", 24)
     c.drawString(2*cm, h-1.5*cm, str(inv.get('comp_name', '')))
     c.setFont("ThaiFontBold", 14)
@@ -192,6 +221,7 @@ def create_pdf_v2(inv, items):
     c.setFont("ThaiFontBold", 14)
     c.drawString(2*cm, h-5.3*cm, f"ที่อยู่: {inv.get('address','')}")
     c.drawString(2*cm, h-6.1*cm, f"Ref Tax ID: {inv.get('ref_tax_id','-')} | Ref Receipt: {inv.get('ref_receipt_id','-')}")
+    
     transport_data = [
         [f"ทะเบียนรถ: {inv.get('car_id','')}", f"ออก: {inv.get('date_out','')} {inv.get('time_out','')}", f"สถานะบิล: {inv.get('doc_status','')}"],
         [f"ชื่อคนขับ: {inv.get('driver_name','')}", f"เข้า: {inv.get('date_in','')} {inv.get('time_in','')}", f"การชำระ: {inv.get('pay_status','')}"],
@@ -202,6 +232,7 @@ def create_pdf_v2(inv, items):
     t_trans.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'ThaiFontBold', 12), ('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
     t_trans.wrapOn(c, 2*cm, h-9.5*cm)
     t_trans.drawOn(c, 2*cm, h-9.5*cm)
+    
     item_header = [["ลำดับ", "รายการสินค้า/บริการ", "หน่วย", "จำนวน"]]
     item_rows = []
     total_qty = 0
@@ -210,14 +241,17 @@ def create_pdf_v2(inv, items):
         item_rows.append([i+1, it.get("product", ""), it.get("unit", ""), f"{qty:,}"])
         total_qty += qty
     item_rows.append(["", "ยอดรวมจำนวนทั้งสิ้น", "", f"{total_qty:,}"])
+    
     t_items = Table(item_header + item_rows, colWidths=[1.5*cm, 10.5*cm, 2.5*cm, 2.5*cm])
     t_items.setStyle(TableStyle([('FONT', (0,0), (-1,0), 'ThaiFontBold', 15), ('FONT', (0,1), (-1,-1), 'ThaiFontBold', 14), ('ALIGN', (0,0), (0,-1), 'CENTER'), ('ALIGN', (3,0), (3,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,0), (-1,0), 1, colors.black), ('LINEBELOW', (0,-1), (-1,-1), 1, colors.black)]))
     tw, th = t_items.wrapOn(c, 2*cm, h-18*cm)
     t_y = h - 11.0*cm - th
     t_items.drawOn(c, 2*cm, t_y)
+    
     curr_y = t_y - 1.2*cm
     c.setFont("ThaiFontBold", 13)
     c.drawString(2.2*cm, curr_y, f"หมายเหตุ: {inv.get('remark','-')}")
+    
     sig_y = 3.5*cm
     labels = [("ผู้รับสินค้า", inv.get('receiver_name','')), ("ผู้ส่งสินค้า", inv.get('sender_name','')), ("ผู้ตรวจสอบ", inv.get('checker_name','')), ("ผู้ออกบิล", inv.get('issuer_name',''))]
     for i, (lab, val) in enumerate(labels):
@@ -356,39 +390,7 @@ btn_col1, btn_col2 = st.columns(2)
 
 def get_final_data(inv_no, date_val):
     return {
-        "invoice_no": inv_no,
-        "date": date_val,
-        "customer": customer,
-        "address": address,
-        "subtotal": subtotal,
-        "vat": vat,
-        "shipping": shipping,
-        "discount": discount,
-        "total": grand_total,
-        "doc_status": doc_status,
-        "car_id": car_id,
-        "driver_name": driver_name,
-        "pay_status": pay_status,
-        "date_out": date_out,
-        "time_out": time_out,
-        "date_in": date_in,
-        "time_in": time_in,
-        "ref_tax_id": ref_tax_id,
-        "ref_receipt_id": ref_receipt_id,
-        "seal_no": seal_no,
-        "pay_term": pay_term,
-        "ship_method": ship_method,
-        "driver_license": driver_license,
-        "receiver_name": receiver_name,
-        "issuer_name": issuer_name,
-        "sender_name": sender_name,
-        "checker_name": checker_name,
-        "remark": remark,
-        "comp_name": comp_name,
-        "comp_address": comp_address,
-        "comp_tax_id": comp_tax_id,
-        "comp_phone": comp_phone,
-        "comp_doc_title": comp_doc_title
+        "invoice_no": inv_no, "date": date_val, "customer": customer, "address": address, "subtotal": subtotal, "vat": vat, "shipping": shipping, "discount": discount, "total": grand_total, "doc_status": doc_status, "car_id": car_id, "driver_name": driver_name, "pay_status": pay_status, "date_out": date_out, "time_out": time_out, "date_in": date_in, "time_in": time_in, "ref_tax_id": ref_tax_id, "ref_receipt_id": ref_receipt_id, "seal_no": seal_no, "pay_term": pay_term, "ship_method": ship_method, "driver_license": driver_license, "receiver_name": receiver_name, "issuer_name": issuer_name, "sender_name": sender_name, "checker_name": checker_name, "remark": remark, "comp_name": comp_name, "comp_address": comp_address, "comp_tax_id": comp_tax_id, "comp_phone": comp_phone, "comp_doc_title": comp_doc_title
     }
 
 if not st.session_state.editing_no:
@@ -399,10 +401,8 @@ if not st.session_state.editing_no:
                 new_no = next_inv_no(inv_df)
                 date_now = datetime.now().strftime("%d/%m/%Y")
                 data_pdf = get_final_data(new_no, date_now)
-                
                 ws_inv.append_row(list(data_pdf.values()))
                 for it in st.session_state.invoice_items: ws_item.append_row([new_no, it['product'], it.get('unit',''), it['qty'], it['price'], it['amount']])
-                
                 st.session_state.last_saved_data = {"inv": data_pdf, "items": list(st.session_state.invoice_items)}
                 st.success(f"บันทึกสำเร็จ: {new_no}")
                 st.cache_data.clear()
@@ -414,16 +414,13 @@ else:
             row_idx = cell.row
             date_val = old_inv.get('date', datetime.now().strftime("%d/%m/%Y"))
             data_pdf = get_final_data(edit_no, date_val)
-            
             ws_inv.update(f'A{row_idx}:AG{row_idx}', [list(data_pdf.values())])
-            
             all_items = ws_item.get_all_values()
             new_item_sheet_data = [row for row in all_items if row[0] != edit_no]
             for it in st.session_state.invoice_items:
                 new_item_sheet_data.append([edit_no, it['product'], it.get('unit',''), it['qty'], it['price'], it['amount']])
             ws_item.clear()
             ws_item.update('A1', new_item_sheet_data)
-            
             st.session_state.last_saved_data = {"inv": data_pdf, "items": list(st.session_state.invoice_items)}
             st.success(f"อัปเดต {edit_no} สำเร็จ!")
             st.cache_data.clear()
