@@ -266,7 +266,7 @@ def create_pdf_v2(inv, items):
     return buf
 
 # ================= 4. MAIN UI =================
-st.markdown("## 🚚 ใบกำกับขนส่งสินค้า MJ1")
+st.markdown("## 🚚 ใบกำกับขนส่ง MJ POWER OIL")
 st.link_button("📊 ฐานข้อมูล", SHEET_URL, use_container_width=True, type="secondary")
 
 with st.expander("🔍 ค้นหาและจัดการประวัติเอกสาร"):
@@ -437,3 +437,4 @@ if st.session_state.last_saved_data:
     p_col1, p_col2 = st.columns(2)
     p_col1.download_button("📥 PDF แสดงราคา", create_pdf(pdf_inv, pdf_items), f"{pdf_inv['invoice_no']}_V1.pdf", use_container_width=True, type="secondary")
     p_col2.download_button("📥 PDF แสดงจำนวน", create_pdf_v2(pdf_inv, pdf_items), f"{pdf_inv['invoice_no']}_V2.pdf", use_container_width=True, type="secondary")
+
