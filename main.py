@@ -65,7 +65,8 @@ def reset_form():
     st.session_state.invoice_items = []
     st.session_state.form_customer = ""
     st.session_state.form_address = ""
-    st.session_state.form_date = datetime.now().strftime("%d/%m/%Y") # กำหนดค่าเริ่มต้นเป็นวันนี้
+    # กำหนดวันที่เริ่มต้นเป็นปัจจุบัน
+    st.session_state.form_date = datetime.now().strftime("%d/%m/%Y") 
     st.session_state.form_shipping = 0.0
     st.session_state.form_discount = 0.0
     st.session_state.form_vat = 0.0
@@ -269,7 +270,8 @@ with st.expander("🔍 ค้นหาและจัดการประวั
                     reset_form()
                     st.session_state.form_customer = old_inv.get("customer", "")
                     st.session_state.form_address = old_inv.get("address", "")
-                    st.session_state.form_date = str(old_inv.get("date", "")) # ดึงวันที่มาใช้
+                    # ดึงวันที่จากประวัติมาใส่
+                    st.session_state.form_date = str(old_inv.get("date", "")) 
                     st.session_state.form_shipping = float(old_inv.get("shipping", 0))
                     st.session_state.form_discount = float(old_inv.get("discount", 0))
                     st.session_state.form_vat = float(old_inv.get("vat", 0))
@@ -283,7 +285,8 @@ with st.expander("🔍 ค้นหาและจัดการประวั
                     st.session_state.editing_no = sel_no
                     st.session_state.form_customer = old_inv.get("customer", "")
                     st.session_state.form_address = old_inv.get("address", "")
-                    st.session_state.form_date = str(old_inv.get("date", "")) # ดึงวันที่จากแถวที่เลือกมาใส่ใน session
+                    # ดึงวันที่จากประวัติมาใส่เพื่อส่งเข้าช่อง Input
+                    st.session_state.form_date = str(old_inv.get("date", "")) 
                     st.session_state.form_shipping = float(old_inv.get("shipping", 0))
                     st.session_state.form_discount = float(old_inv.get("discount", 0))
                     st.session_state.form_vat = float(old_inv.get("vat", 0))
@@ -313,7 +316,8 @@ with tab1:
     customer = col1.text_input("ชื่อลูกค้า", value=st.session_state.form_customer)
     address = col1.text_area("ที่อยู่ลูกค้า", value=st.session_state.form_address)
     
-    # ดึงค่า date มาแสดงใน Input เพื่อให้แก้ไขได้
+    # === ส่วนที่แก้ไข: ผูกค่า form_date เข้ากับช่องกรอกเพื่อดึงข้อมูลขึ้นมาแสดง ===
+    # ตรงนี้จะดึงค่าจาก st.session_state.form_date ที่ได้จากการกด "แก้ไข" มาแสดง
     invoice_date = col1.text_input("วันที่ (DD/MM/YYYY)", value=st.session_state.form_date) 
     
     doc_status = col2.selectbox("สถานะเอกสาร", ["รอดำเนินการ", "ยกเลิก", "ใช้งาน"], index=["รอดำเนินการ", "ยกเลิก", "ใช้งาน"].index(st.session_state.form_doc_status) if st.session_state.form_doc_status in ["รอดำเนินการ", "ยกเลิก", "ใช้งาน"] else 0)
@@ -390,7 +394,7 @@ if not st.session_state.editing_no:
         else:
             with st.spinner("กำลังบันทึก..."):
                 new_no = next_inv_no(inv_df)
-                # ใช้วันที่จากตัวแปร invoice_date ในหน้าฟอร์มแทน datetime.now()
+                # ใช้วันที่ที่กรอกในช่อง invoice_date
                 data_pdf = get_final_data(new_no, invoice_date) 
                 ws_inv.append_row(list(data_pdf.values()))
                 for it in st.session_state.invoice_items: ws_item.append_row([new_no, it['product'], it.get('unit',''), it['qty'], it['price'], it['amount']])
@@ -403,7 +407,7 @@ else:
             edit_no = st.session_state.editing_no
             cell = ws_inv.find(edit_no)
             row_idx = cell.row
-            # ใช้วันที่จากตัวแปร invoice_date ที่ดึงขึ้นมาแก้ไข
+            # ใช้วันที่ที่แก้ไขในหน้าฟอร์ม (invoice_date)
             data_pdf = get_final_data(edit_no, invoice_date) 
             ws_inv.update(f'A{row_idx}:AG{row_idx}', [list(data_pdf.values())])
             all_items = ws_item.get_all_values()
