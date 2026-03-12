@@ -65,6 +65,7 @@ def reset_form():
     st.session_state.invoice_items = []
     st.session_state.form_customer = ""
     st.session_state.form_address = ""
+    st.session_state.form_date = datetime.now().strftime("%d/%m/%Y") # กำหนดค่าเริ่มต้นเป็นวันนี้
     st.session_state.form_shipping = 0.0
     st.session_state.form_discount = 0.0
     st.session_state.form_vat = 0.0
@@ -83,22 +84,14 @@ if "invoice_items" not in st.session_state:
 # ================= 3. CORE FUNCTIONS (PDF & LOGIC) =================
 
 def add_single_watermark(c, w, h):
-    """วาดลายน้ำรูปเดียว โดยปรับตำแหน่งลงมาจากกึ่งกลาง 1.5 นิ้ว"""
     try:
         c.saveState()
-        c.setFillAlpha(0.18) # ความเข้ม 18%
-        
+        c.setFillAlpha(0.18) 
         img_w = 12*cm
         img_h = 12*cm
-        
-        # คำนวณตำแหน่ง X (กึ่งกลางแนวนอน)
         x = (w - img_w) / 2
-        
-        # คำนวณตำแหน่ง Y (กึ่งกลางแนวตั้ง - 1.5 นิ้ว)
-        # จุด 0,0 ของ ReportLab อยู่ที่มุมซ้ายล่าง ดังนั้นลบค่าออกคือการเลื่อนลง
         center_y = (h - img_h) / 2
         y = center_y - (1.5 * inch)
-        
         c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
         c.restoreState()
     except:
@@ -123,11 +116,7 @@ def create_pdf(inv, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
-    
-    # 1. วาดลายน้ำ
     add_single_watermark(c, w, h)
-
-    # 2. เนื้อหา V1 (แสดงราคา)
     c.setFont("ThaiFontBold", 24) 
     c.drawString(2*cm, h-1.5*cm, str(inv.get('comp_name', '')))
     c.setFont("ThaiFontBold", 14)
@@ -201,11 +190,7 @@ def create_pdf_v2(inv, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
-    
-    # 1. วาดลายน้ำ
     add_single_watermark(c, w, h)
-
-    # 2. เนื้อหา V2 (แสดงจำนวน)
     c.setFont("ThaiFontBold", 24)
     c.drawString(2*cm, h-1.5*cm, str(inv.get('comp_name', '')))
     c.setFont("ThaiFontBold", 14)
@@ -284,6 +269,7 @@ with st.expander("🔍 ค้นหาและจัดการประวั
                     reset_form()
                     st.session_state.form_customer = old_inv.get("customer", "")
                     st.session_state.form_address = old_inv.get("address", "")
+                    st.session_state.form_date = str(old_inv.get("date", "")) # ดึงวันที่มาใช้
                     st.session_state.form_shipping = float(old_inv.get("shipping", 0))
                     st.session_state.form_discount = float(old_inv.get("discount", 0))
                     st.session_state.form_vat = float(old_inv.get("vat", 0))
@@ -297,6 +283,7 @@ with st.expander("🔍 ค้นหาและจัดการประวั
                     st.session_state.editing_no = sel_no
                     st.session_state.form_customer = old_inv.get("customer", "")
                     st.session_state.form_address = old_inv.get("address", "")
+                    st.session_state.form_date = str(old_inv.get("date", "")) # ดึงวันที่จากแถวที่เลือกมาใส่ใน session
                     st.session_state.form_shipping = float(old_inv.get("shipping", 0))
                     st.session_state.form_discount = float(old_inv.get("discount", 0))
                     st.session_state.form_vat = float(old_inv.get("vat", 0))
@@ -325,6 +312,10 @@ with tab1:
     col1, col2 = st.columns(2)
     customer = col1.text_input("ชื่อลูกค้า", value=st.session_state.form_customer)
     address = col1.text_area("ที่อยู่ลูกค้า", value=st.session_state.form_address)
+    
+    # ดึงค่า date มาแสดงใน Input เพื่อให้แก้ไขได้
+    invoice_date = col1.text_input("วันที่ (DD/MM/YYYY)", value=st.session_state.form_date) 
+    
     doc_status = col2.selectbox("สถานะเอกสาร", ["รอดำเนินการ", "ยกเลิก", "ใช้งาน"], index=["รอดำเนินการ", "ยกเลิก", "ใช้งาน"].index(st.session_state.form_doc_status) if st.session_state.form_doc_status in ["รอดำเนินการ", "ยกเลิก", "ใช้งาน"] else 0)
     pay_status = col2.selectbox("สถานะการชำระ", ["ค้างชำระ", "ชำระแล้ว"], index=["ค้างชำระ", "ชำระแล้ว"].index(st.session_state.form_payment_status) if st.session_state.form_payment_status in ["ค้างชำระ", "ชำระแล้ว"] else 0)
     pay_term = col2.text_input("เงื่อนไขการชำระเงิน", value=st.session_state.form_pay_term)
@@ -399,8 +390,8 @@ if not st.session_state.editing_no:
         else:
             with st.spinner("กำลังบันทึก..."):
                 new_no = next_inv_no(inv_df)
-                date_now = datetime.now().strftime("%d/%m/%Y")
-                data_pdf = get_final_data(new_no, date_now)
+                # ใช้วันที่จากตัวแปร invoice_date ในหน้าฟอร์มแทน datetime.now()
+                data_pdf = get_final_data(new_no, invoice_date) 
                 ws_inv.append_row(list(data_pdf.values()))
                 for it in st.session_state.invoice_items: ws_item.append_row([new_no, it['product'], it.get('unit',''), it['qty'], it['price'], it['amount']])
                 st.session_state.last_saved_data = {"inv": data_pdf, "items": list(st.session_state.invoice_items)}
@@ -412,8 +403,8 @@ else:
             edit_no = st.session_state.editing_no
             cell = ws_inv.find(edit_no)
             row_idx = cell.row
-            date_val = old_inv.get('date', datetime.now().strftime("%d/%m/%Y"))
-            data_pdf = get_final_data(edit_no, date_val)
+            # ใช้วันที่จากตัวแปร invoice_date ที่ดึงขึ้นมาแก้ไข
+            data_pdf = get_final_data(edit_no, invoice_date) 
             ws_inv.update(f'A{row_idx}:AG{row_idx}', [list(data_pdf.values())])
             all_items = ws_item.get_all_values()
             new_item_sheet_data = [row for row in all_items if row[0] != edit_no]
@@ -437,4 +428,3 @@ if st.session_state.last_saved_data:
     p_col1, p_col2 = st.columns(2)
     p_col1.download_button("📥 PDF แสดงราคา", create_pdf(pdf_inv, pdf_items), f"{pdf_inv['invoice_no']}_V1.pdf", use_container_width=True, type="secondary")
     p_col2.download_button("📥 PDF แสดงจำนวน", create_pdf_v2(pdf_inv, pdf_items), f"{pdf_inv['invoice_no']}_V2.pdf", use_container_width=True, type="secondary")
-
