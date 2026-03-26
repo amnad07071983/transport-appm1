@@ -106,7 +106,8 @@ def generate_pdf_file(inv_no, items):
     c.drawString(1.5*cm, h-2.5*cm, f"โทร.{st.session_state.get('in_ผู้จำหน่าย-เบอร์โทร', '')}")
     c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {st.session_state.get('in_ผู้จำหน่าย-เลขผู้เสียภาษี', '')}")
 
-    c.setFont(FONT_NAME, 14)
+    # ปรับขนาดชื่อเอกสารให้ใหญ่ขึ้น (จาก 14 เป็น 20)
+    c.setFont(FONT_NAME, 20)
     c.drawRightString(19.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
     
     c.setFont(FONT_NAME, 10)
@@ -159,7 +160,6 @@ def generate_pdf_file(inv_no, items):
     c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')}")
     c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
 
-    # เส้นคั่นระหว่าง ข้อ 2 และ ข้อ 3
     c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
 
     # 3. รายละเอียดน้ำมันเชื้อเพลิง
@@ -192,7 +192,6 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-20.5*cm)
     t.drawOn(c, 1*cm, h-20.5*cm)
 
-    # เส้นคั่นระหว่าง ข้อ 3 และ ข้อ 4
     c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
 
     # 4. การยืนยันและรับสินค้า
@@ -201,7 +200,6 @@ def generate_pdf_file(inv_no, items):
     c.setFont(FONT_NAME, 10)
     c.drawString(1.5*cm, h-22.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
-    # --- 5. ลายเซ็น ---
     sig_y = (h - 25.5*cm)
     label_y = sig_y - 0.5*cm
     title_y = label_y - 0.6*cm
