@@ -128,7 +128,7 @@ def generate_pdf_file(inv_no, items):
 
     # 3. ตาราง
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
-    data_rows = [[i+1, it['price'], it['amount'], it['product'], it['unit'], it['qty']] for i, it in enumerate(items)]
+    data_rows = [[i+1, it['tank'], it['seal'], it['product'], it['unit'], it['qty']] for i, it in enumerate(items)]
     while len(data_rows) < 4: data_rows.append(["","","","","",""])
     t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
     t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
@@ -169,7 +169,7 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                 
                 # ดึงรายการสินค้า
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
-                st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "price": str(i.get('price','')), "amount": str(i.get('amount',''))} for i in it_rows]
+                st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.rerun()
                 
             if col_b.button("🔄 โหลดมาสร้างซ้ำ"):
@@ -178,7 +178,7 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                 for f in transport_fields:
                     st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
-                st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "price": str(i.get('price','')), "amount": str(i.get('amount',''))} for i in it_rows]
+                st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.rerun()
 
 tabs = st.tabs(["📦 คู่ค้า", "🚛 ขนส่ง", "⛽ สินค้า", "🏢 บริษัท"])
