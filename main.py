@@ -87,14 +87,13 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- 0. Watermark (ขนาด 10cm, ลงจากกลาง 1.5 นิ้ว) ---
+    # --- 0. Watermark (ขนาด 10cm, จาง 30%, ลงจากกึ่งกลาง 1.5 นิ้ว) ---
     try:
         if os.path.exists('p1.png'):
             c.saveState()
-            c.setFillAlpha(0.6)
-            img_size = 10*cm # เล็กลงอีกนิด
+            c.setFillAlpha(0.3)  # ปรับจางพิเศษ
+            img_size = 10*cm
             x_pos = (w - img_size) / 2
-            # กึ่งกลางลบด้วย 1.5 นิ้ว
             y_pos = ((h - img_size) / 2) - (1.5 * inch)
             c.drawImage('p1.png', x_pos, y_pos, width=img_size, height=img_size, mask='auto')
             c.restoreState()
@@ -117,7 +116,7 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # ข้อมูลคู่ค้า
+    # 1. ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -130,14 +129,14 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-8.8*cm, 20*cm, h-8.8*cm)
 
-    # 2. การขนส่ง
+    # 2. ข้อมูลการขนส่ง
     c.drawString(1.2*cm, h-9.3*cm, "2. ข้อมูลการขนส่ง")
     c.drawString(1.5*cm, h-9.9*cm, f"2.1 ผู้ดำเนินการขนส่ง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
     c.drawString(1.5*cm, h-10.4*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า (เอาสีหัวตารางออก)
+    # 3. ตารางสินค้า (หัวตารางไม่มีสี)
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
@@ -160,12 +159,11 @@ def generate_pdf_file(inv_no, items):
         ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
         ('SPAN', (3, -1), (4, -1)),
         ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
-        # นำ BACKGROUND ออกเพื่อให้หัวตารางเป็นสีขาว
     ]))
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # 4. ลายเซ็น (เลื่อนลง 1.5 นิ้วจากจุดเดิม)
+    # 4. ลายเซ็น (เลื่อนลง 1.5 นิ้วจากตำแหน่งเดิม)
     sig_y = (h - 23*cm) - (1.5 * inch)
     c.drawCentredString(4.5*cm, sig_y, "..................................")
     c.drawCentredString(4.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
