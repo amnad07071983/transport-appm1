@@ -87,7 +87,7 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- 0. Watermark (ขนาด 10cm, จาง 30%, ลงจากกึ่งกลาง 1.5 นิ้ว) ---
+    # --- 0. Watermark ---
     try:
         if os.path.exists('p1.png'):
             c.saveState()
@@ -136,7 +136,7 @@ def generate_pdf_file(inv_no, items):
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า (หัวตารางสีขาว + ยอดรวมคอมม่า)
+    # 3. ตารางสินค้า
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
@@ -163,27 +163,27 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # --- 4. ลายเซ็น (เลื่อนลง 1.5 นิ้ว พร้อมข้อมูลระบุตำแหน่งและวันที่) ---
+    # --- 4. ลายเซ็น ---
     sig_y = (h - 23*cm) - (1.5 * inch)
-    label_y = sig_y - 0.5*cm   # ชื่อในวงเล็บ
-    title_y = label_y - 0.6*cm # ชื่อตำแหน่ง
-    date_y = title_y - 0.6*cm  # วันที่
+    label_y = sig_y - 0.5*cm
+    title_y = label_y - 0.6*cm
+    date_y = title_y - 0.6*cm
     
     c.setFont(FONT_NAME, 10)
 
-    # จุดที่ 1
+    # จุดที่ 1: ผู้ออกเอกสาร
     c.drawCentredString(4.5*cm, sig_y, "..................................")
     c.drawCentredString(4.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
     c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
     c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
 
-    # จุดที่ 2
+    # จุดที่ 2: พนักงานขับรถ (ดึงชื่อจาก ข้อมูลพนักงานขับรถ-ชื่อ)
     c.drawCentredString(10.5*cm, sig_y, "..................................")
-    c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-พนักงานขับรถ', '')} )")
+    c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')} )")
     c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
     c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
 
-    # จุดที่ 3
+    # จุดที่ 3: ผู้รับสินค้า
     c.drawCentredString(16.5*cm, sig_y, "..................................")
     c.drawCentredString(16.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
     c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
