@@ -57,7 +57,7 @@ transport_fields = [
     "ผู้รับผลิตภัณฑ์-ชื่อ", "ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี", "ผู้รับผลิตภัณฑ์-ที่อยู่", "ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว",
     "ผู้ดำเนินการขนส่ง-ชื่อ", "ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี", "ผู้ดำเนินการขนส่ง-ที่อยู่", "ผู้ดำเนินการขนส่ง-เบอร์โทร",
     "ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง", "ผู้ดำเนินการขนส่ง-ใบอนุญาต",
-    "ข้อมูลพนักงานขับรถ-ชื่อ", "ข้อมูลพนักงานขับรถ-เลขใบขับขี่", "ข้อมูลพนักงานขับรถ-เบอร์โทร", "ข้อมูลพนักงานขับรถ-ทะเบียนรถ",
+    "ข้อมูลพนักงานขับรถ-ชื่อ", "ข้อมูลพนักงานขับรถ-เลขใบขับขี่", "ข้อมูลพนักงาน ขับรถ-เบอร์โทร", "ข้อมูลพนักงานขับรถ-ทะเบียนรถ",
     "ข้อมูลพนักงานขับรถ-วิธีขนส่ง", "ข้อมูลพนักงานขับรถ-วันออกเดินทาง", "ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง",
     "ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง", "ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง",
     "การยืนยันและรับสินค้า-ผู้ออกเอกสาร", "การยืนยันและรับสินค้า-พนักงานขับรถ", "การยืนยันและรับสินค้า-ผู้รับสินค้า",
@@ -121,9 +121,7 @@ def generate_pdf_file(inv_no, items):
     c.drawString(11*cm, h-9.6*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.1*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # --- Table ---
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
-    # ปรับมาใช้ Key 'tank' และ 'seal' ให้ตรงกับ Session State
     data_rows = [[i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), it.get('qty','')] for i, it in enumerate(items)]
     while len(data_rows) < 4: data_rows.append(["","","","","",""])
     t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
@@ -161,7 +159,6 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                     st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
-                # โหลดข้อมูลกลับเข้า Session State โดยใช้ Key 'tank' และ 'seal'
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.rerun()
                 
@@ -179,6 +176,7 @@ with tabs[0]:
     for f in transport_fields[0:11]: st.text_input(f, key=f"in_{f}")
 with tabs[1]:
     for f in transport_fields[11:26]: st.text_input(f, key=f"in_{f}")
+
 with tabs[2]:
     ca, cb, cc, cd, ce = st.columns([3,1,1,2,2])
     p_n = ca.text_input("รายการ", key="t_n")
@@ -190,23 +188,37 @@ with tabs[2]:
     if st.button("➕ เพิ่มรายการสินค้า"):
         if p_n and p_q:
             st.session_state.invoice_items.append({
-                "product": p_n, 
-                "unit": p_u, 
-                "qty": p_q, 
-                "tank": p_p, 
-                "seal": p_a
+                "product": p_n, "unit": p_u, "qty": p_q, "tank": p_p, "seal": p_a
             })
             st.rerun()
         else:
             st.warning("กรุณากรอกชื่อรายการและจำนวน")
 
-    # --- ส่วนแสดงตารางสินค้าที่เพิ่มแล้ว ---
     st.markdown("---")
     if st.session_state.invoice_items:
-        df_display = pd.DataFrame(st.session_state.invoice_items)
-        # เปลี่ยนชื่อคอลัมน์ให้แสดงผลภาษาไทยสวยงามในหน้าเว็บ
-        df_display.columns = ["รายการ", "หน่วย", "จำนวน", "ช่องถัง", "ซีล"]
-        st.table(df_display)
+        st.write("💡 **แก้ไขข้อมูล:** คลิกในช่องตารางแล้วพิมพ์ | **ลบแถว:** เลือกแถวแล้วกดปุ่ม Delete บนคีย์บอร์ด")
+        
+        # แสดงผลตารางด้วย data_editor
+        df_items = pd.DataFrame(st.session_state.invoice_items)
+        edited_df = st.data_editor(
+            df_items,
+            column_config={
+                "product": "รายการ",
+                "unit": "หน่วย",
+                "qty": "จำนวน",
+                "tank": "ช่องถัง",
+                "seal": "ซีล",
+            },
+            num_rows="dynamic",  # ยอมให้เพิ่ม/ลบแถวได้อิสระ
+            use_container_width=True,
+            key="logistics_item_editor"
+        )
+        
+        # ซิงค์ข้อมูลกลับเข้า session_state ทันทีที่มีการเปลี่ยนแปลง
+        if not edited_df.equals(df_items):
+            st.session_state.invoice_items = edited_df.to_dict('records')
+            # หมายเหตุ: ไม่ต้อง rerun ตรงนี้เพื่อให้ data_editor ทำงานได้ลื่นไหล
+
         if st.button("🗑️ ล้างรายการสินค้าทั้งหมด"):
             st.session_state.invoice_items = []
             st.rerun()
@@ -237,7 +249,6 @@ if st.button("💾 บันทึกและออก PDF", type="primary", us
 
     ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
     for it in st.session_state.invoice_items:
-        # บันทึกโดยใช้ชื่อ Key ที่ปรับใหม่
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
     
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
