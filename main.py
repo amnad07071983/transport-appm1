@@ -147,7 +147,7 @@ def generate_pdf_file(inv_no, items):
     c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง', '')}")
     c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     
-    # 2.2 ข้อมูลพนักงานขับรถ (ขยับออกขวา 1.5 นิ้ว หรือประมาณ 11cm + 3.8cm = 14.8cm)
+    # 2.2 ข้อมูลพนักงานขับรถ
     x_offset_2_2 = 11*cm + (1.5 * inch)
     c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เลขใบขับขี่', '')}")
@@ -158,6 +158,9 @@ def generate_pdf_file(inv_no, items):
     c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
     c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')}")
     c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
+
+    # เส้นคั่นระหว่าง ข้อ 2 และ ข้อ 3
+    c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
 
     # 3. รายละเอียดน้ำมันเชื้อเพลิง
     c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
@@ -188,6 +191,9 @@ def generate_pdf_file(inv_no, items):
     ]))
     t.wrapOn(c, 1*cm, h-20.5*cm)
     t.drawOn(c, 1*cm, h-20.5*cm)
+
+    # เส้นคั่นระหว่าง ข้อ 3 และ ข้อ 4
+    c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
 
     # 4. การยืนยันและรับสินค้า
     c.setFont(FONT_NAME, 11)
