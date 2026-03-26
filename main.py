@@ -87,7 +87,7 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- 0. Watermark (Alpha 0.3) ---
+    # --- 0. Watermark ---
     try:
         if os.path.exists('p1.png'):
             c.saveState()
@@ -99,7 +99,7 @@ def generate_pdf_file(inv_no, items):
             c.restoreState()
     except: pass
 
-    # --- 1. Header (ขยับ เลขที่/วันที่ ไปทางขวาอีก 2 นิ้ว) ---
+    # --- 1. Header (ปรับตำแหน่ง เลขที่/วันที่ กลับมา 1 นิ้ว เพื่อไม่ให้ตกขอบ) ---
     c.setFont(FONT_NAME, 11)
     c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
     c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
@@ -112,14 +112,14 @@ def generate_pdf_file(inv_no, items):
     c.setFont(FONT_NAME, 10)
     c.drawRightString(19.5*cm, h-2.0*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
     
-    # ตำแหน่งใหม่ที่ขยับไปทางขวา 2 นิ้ว
-    header_x_right = 13*cm + (2 * inch)
+    # ปรับเหลือบวก 1 นิ้ว (จากเดิม 2 นิ้ว)
+    header_x_right = 13*cm + (1 * inch)
     c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
     c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # 1. ข้อมูลคู่ค้า
+    # ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -132,14 +132,14 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-8.8*cm, 20*cm, h-8.8*cm)
 
-    # 2. ข้อมูลการขนส่ง
+    # ข้อมูลการขนส่ง
     c.drawString(1.2*cm, h-9.3*cm, "2. ข้อมูลการขนส่ง")
     c.drawString(1.5*cm, h-9.9*cm, f"2.1 ผู้ดำเนินการขนส่ง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
     c.drawString(1.5*cm, h-10.4*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า
+    # ตารางสินค้า
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
@@ -180,19 +180,19 @@ def generate_pdf_file(inv_no, items):
     
     c.setFont(FONT_NAME, 10)
 
-    # จุดที่ 1: ผู้ออกเอกสาร
+    # จุดที่ 1
     c.drawCentredString(4.5*cm, sig_y, "..................................")
     c.drawCentredString(4.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
     c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
     c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
 
-    # จุดที่ 2: พนักงานขับรถ
+    # จุดที่ 2
     c.drawCentredString(10.5*cm, sig_y, "..................................")
     c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')} )")
     c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
     c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
 
-    # จุดที่ 3: ผู้รับสินค้า
+    # จุดที่ 3
     c.drawCentredString(16.5*cm, sig_y, "..................................")
     c.drawCentredString(16.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
     c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
