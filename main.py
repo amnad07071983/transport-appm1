@@ -51,7 +51,6 @@ inv_df, item_df = get_data_cached()
 ws_inv = client.worksheet(INV_SHEET)
 ws_item = client.worksheet(ITEM_SHEET)
 
-# รายชื่อฟิลด์ทั้งหมด (ต้องตรงกับหัวตารางใน Google Sheet)
 transport_fields = [
     "ผู้รับสินค้า-ชื่อ", "ผู้รับสินค้า-ที่อยู่", "ผู้รับสินค้า-เลขผู้เสียภาษี", "ผู้รับสินค้า-เบอร์โทร",
     "คลังรับผลิตภัณฑ์-ชื่อ", "คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี", "คลังรับผลิตภัณฑ์-ที่อยู่",
@@ -88,14 +87,12 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- Header ---
     c.setFont(FONT_NAME, 11)
     c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
     c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-2.5*cm, f"โทร.{st.session_state.get('in_ผู้จำหน่าย-เบอร์โทร', '')}")
     c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {st.session_state.get('in_ผู้จำหน่าย-เลขผู้เสียภาษี', '')}")
 
-    # ฟิลด์ ผู้จำหน่าย-ชื่อเอกสาร ไว้ขวาสุดบรรทัดเดียวกับชื่อบริษัท
     c.setFont(FONT_NAME, 14)
     c.drawRightString(19.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
     
@@ -106,7 +103,6 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # 1. ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -119,23 +115,22 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-8.5*cm, 20*cm, h-8.5*cm)
 
-    # 2. การขนส่ง
     c.drawString(1.2*cm, h-9.0*cm, "2. ข้อมูลการขนส่ง")
     c.drawString(1.5*cm, h-9.6*cm, f"2.1 ผู้ดำเนินการขนส่ง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
     c.drawString(1.5*cm, h-10.1*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     c.drawString(11*cm, h-9.6*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.1*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตาราง
+    # --- Table ---
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
-    data_rows = [[i+1, it['tank'], it['seal'], it['product'], it['unit'], it['qty']] for i, it in enumerate(items)]
+    # ปรับมาใช้ Key 'tank' และ 'seal' ให้ตรงกับ Session State
+    data_rows = [[i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), it.get('qty','')] for i, it in enumerate(items)]
     while len(data_rows) < 4: data_rows.append(["","","","","",""])
     t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
     t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
     t.wrapOn(c, 1*cm, h-16*cm)
     t.drawOn(c, 1*cm, h-16*cm)
 
-    # 4. ลายเซ็น
     sig_y = h-23*cm
     c.drawCentredString(4.5*cm, sig_y, "..................................")
     c.drawCentredString(4.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
@@ -159,16 +154,14 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
             sel_no = selected.split(" | ")[0]
             col_a, col_b = st.columns(2)
             if col_a.button("📝 โหลดมาแก้ไข"):
-                # ดึงข้อมูล Row ที่เลือกมาใส่ Session State
                 row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = sel_no
                 st.session_state.form_date = str(row_data.get('date', st.session_state.form_date))
                 for f in transport_fields:
-                    # แก้ไขจุดสำคัญ: ใช้ชื่อฟิลด์จากลิสต์ transport_fields ในการดึงข้อมูลจาก Sheet
                     st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 
-                # ดึงรายการสินค้า
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
+                # โหลดข้อมูลกลับเข้า Session State โดยใช้ Key 'tank' และ 'seal'
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.rerun()
                 
@@ -193,10 +186,33 @@ with tabs[2]:
     p_q = cc.text_input("จำนวน", key="t_q")
     p_p = cd.text_input("ช่องถัง", key="t_p")
     p_a = ce.text_input("ซีล", key="t_a")
-    if st.button("➕ เพิ่ม"):
-        st.session_state.invoice_items.append({"product":p_n, "unit":p_u, "qty":p_q, "price":p_p, "amount":p_a})
-        st.rerun()
-    st.write(st.session_state.invoice_items)
+    
+    if st.button("➕ เพิ่มรายการสินค้า"):
+        if p_n and p_q:
+            st.session_state.invoice_items.append({
+                "product": p_n, 
+                "unit": p_u, 
+                "qty": p_q, 
+                "tank": p_p, 
+                "seal": p_a
+            })
+            st.rerun()
+        else:
+            st.warning("กรุณากรอกชื่อรายการและจำนวน")
+
+    # --- ส่วนแสดงตารางสินค้าที่เพิ่มแล้ว ---
+    st.markdown("---")
+    if st.session_state.invoice_items:
+        df_display = pd.DataFrame(st.session_state.invoice_items)
+        # เปลี่ยนชื่อคอลัมน์ให้แสดงผลภาษาไทยสวยงามในหน้าเว็บ
+        df_display.columns = ["รายการ", "หน่วย", "จำนวน", "ช่องถัง", "ซีล"]
+        st.table(df_display)
+        if st.button("🗑️ ล้างรายการสินค้าทั้งหมด"):
+            st.session_state.invoice_items = []
+            st.rerun()
+    else:
+        st.info("ยังไม่มีรายการสินค้า")
+
 with tabs[3]:
     st.session_state.form_date = st.text_input("วันที่", value=st.session_state.form_date)
     for f in transport_fields[26:]: st.text_input(f, key=f"in_{f}")
@@ -219,15 +235,16 @@ if st.button("💾 บันทึกและออก PDF", type="primary", us
                 for cell in reversed(found): ws.delete_rows(cell.row)
         except: pass
 
-    # บันทึกข้อมูล (Column 1=ID, Column 2=Date, ต่อด้วย transport_fields)
     ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
     for it in st.session_state.invoice_items:
-        ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['price'], it['amount']])
+        # บันทึกโดยใช้ชื่อ Key ที่ปรับใหม่
+        ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
     
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
     st.session_state.editing_no = None
     st.cache_data.clear()
+    st.success(f"บันทึกข้อมูลเลขที่ {final_no} เรียบร้อยแล้ว")
     st.rerun()
 
 if st.session_state.pdf_buffer:
-    st.download_button("📥 Download PDF", data=st.session_state.pdf_buffer, file_name="Invoice.pdf", mime="application/pdf")
+    st.download_button("📥 Download PDF", data=st.session_state.pdf_buffer, file_name=f"Invoice_{st.session_state.get('editing_no','New')}.pdf", mime="application/pdf")
