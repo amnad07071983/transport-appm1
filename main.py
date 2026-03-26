@@ -82,11 +82,16 @@ def reset_form_action():
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
 # ================= 3. PDF GENERATOR =================
-def generate_pdf_file(inv_no, items):
+def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
+    # หากมีการส่งข้อมูลดิบมา (สำหรับปุ่มโหลดด่วน) ให้ใช้ข้อมูลนั้น
+    def get_val(key, default=""):
+        if data_dict: return str(data_dict.get(key, default))
+        return st.session_state.get(f"in_{key}", default)
+
     try:
         if os.path.exists('p1.png'):
             c.saveState()
@@ -99,61 +104,59 @@ def generate_pdf_file(inv_no, items):
     except: pass
 
     c.setFont(FONT_NAME, 11)
-    c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-2.5*cm, f"โทร.{st.session_state.get('in_ผู้จำหน่าย-เบอร์โทร', '')}")
-    c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {st.session_state.get('in_ผู้จำหน่าย-เลขผู้เสียภาษี', '')}")
+    c.drawString(1.5*cm, h-1.5*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
+    c.drawString(1.5*cm, h-2.0*cm, f"{get_val('ผู้จำหน่าย-ที่อยู่')}")
+    c.drawString(1.5*cm, h-2.5*cm, f"โทร.{get_val('ผู้จำหน่าย-เบอร์โทร')}")
+    c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {get_val('ผู้จำหน่าย-เลขผู้เสียภาษี')}")
 
-    # ปรับขนาด 18 และเลื่อนตำแหน่งลงมาที่ h-1.7*cm
     c.setFont(FONT_NAME, 18)
-    c.drawRightString(19.5*cm, h-1.7*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
+    c.drawRightString(19.5*cm, h-1.7*cm, f"{get_val('ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
     
     c.setFont(FONT_NAME, 10)
     c.drawRightString(19.5*cm, h-2.2*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
     
     header_x_right = 13*cm + (1 * inch)
     c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
-    c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
+    c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {data_dict.get('date') if data_dict else st.session_state.get('form_date', '')}")
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
-    c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
+    c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
+    c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
+    c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
     
-    c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
-    c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
+    c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
+    c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
+    c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
+    c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
     
-    c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้รับสินค้า-เลขผู้เสียภาษี', '')}")
+    c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
+    c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
+    c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
 
     c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
 
     c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
-    c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี', '')}")
-    c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-12.8*cm, f"เบอร์โทร : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-เบอร์โทร', '')}")
-    c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง', '')}")
-    c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
+    c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
+    c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
+    c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
+    c.drawString(1.5*cm, h-12.8*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
+    c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
+    c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
     
     x_offset_2_2 = 11*cm + (1.5 * inch)
-    c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
-    c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เลขใบขับขี่', '')}")
-    c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เบอร์โทร', '')}")
-    c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
-    c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วิธีขนส่ง', '')}")
-    c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันออกเดินทาง', '')}")
-    c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
-    c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')}")
-    c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
+    c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
+    c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
+    c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
+    c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
+    c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
+    c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
+    c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
+    c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
+    c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
 
-    # เส้นคั่น ข้อ 2-3
     c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
 
     c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
@@ -183,7 +186,6 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-20.5*cm)
     t.drawOn(c, 1*cm, h-20.5*cm)
 
-    # เส้นคั่น ข้อ 3-4
     c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
 
     c.setFont(FONT_NAME, 11)
@@ -198,17 +200,17 @@ def generate_pdf_file(inv_no, items):
     
     c.setFont(FONT_NAME, 10)
     c.drawCentredString(4.5*cm, sig_y, "..................................")
-    c.drawCentredString(4.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
+    c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
     c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
     c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
 
     c.drawCentredString(10.5*cm, sig_y, "..................................")
-    c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')} )")
+    c.drawCentredString(10.5*cm, label_y, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
     c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
     c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
 
     c.drawCentredString(16.5*cm, sig_y, "..................................")
-    c.drawCentredString(16.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
+    c.drawCentredString(16.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
     c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
     c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
 
@@ -219,30 +221,36 @@ def generate_pdf_file(inv_no, items):
 # ================= 4. MAIN UI =================
 st.title("🚚 LOGISTICS SYSTEM")
 
-with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"):
+with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิลเก่า"):
     if not inv_df.empty:
         options = [f"{r[INV_KEY]} | {r.get('ผู้รับสินค้า-ชื่อ', '')}" for _, r in inv_df.iterrows()]
         selected = st.selectbox("เลือกบิล", [""] + options[::-1])
         if selected:
             sel_no = selected.split(" | ")[0]
-            col_a, col_b = st.columns(2)
+            col_a, col_b, col_c = st.columns(3)
+            
+            # ข้อมูลดิบสำหรับสร้าง PDF ทันที
+            row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
+            it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
+
             if col_a.button("📝 โหลดมาแก้ไข"):
-                row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = sel_no
                 st.session_state.form_date = str(row_data.get('date', st.session_state.form_date))
                 for f in transport_fields: st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
-                it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.session_state.pdf_buffer = generate_pdf_file(sel_no, st.session_state.invoice_items)
                 st.rerun()
+
             if col_b.button("🔄 โหลดมาสร้างซ้ำ"):
-                row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = None
                 for f in transport_fields: st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
-                it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.session_state.pdf_buffer = None
                 st.rerun()
+
+            # ปุ่มดาวน์โหลด PDF ทันที
+            quick_pdf = generate_pdf_file(sel_no, it_rows, data_dict=row_data)
+            col_c.download_button("📥 ดาวน์โหลด PDF (ทันที)", data=quick_pdf, file_name=f"Invoice_{sel_no}.pdf", mime="application/pdf")
 
 tabs = st.tabs(["📦 คู่ค้า", "🚛 ขนส่ง", "⛽ สินค้า", "🏢 บริษัท"])
 with tabs[0]:
@@ -296,5 +304,5 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
 
 if st.session_state.pdf_buffer:
     fn = f"Invoice_{st.session_state.editing_no}.pdf" if st.session_state.editing_no else "Invoice_New.pdf"
-    st.download_button("📥 ดาวน์โหลดเอกสาร PDF", data=st.session_state.pdf_buffer, file_name=fn, mime="application/pdf", use_container_width=True)
+    st.download_button("📥 ดาวน์โหลดเอกสาร PDF (จากฟอร์มปัจจุบัน)", data=st.session_state.pdf_buffer, file_name=fn, mime="application/pdf", use_container_width=True)
     if st.button("🆕 เริ่มบิลใหม่ (Reset Form)"): reset_form_action(); st.rerun()
