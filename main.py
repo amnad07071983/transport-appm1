@@ -57,7 +57,7 @@ transport_fields = [
     "ผู้รับผลิตภัณฑ์-ชื่อ", "ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี", "ผู้รับผลิตภัณฑ์-ที่อยู่", "ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว",
     "ผู้ดำเนินการขนส่ง-ชื่อ", "ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี", "ผู้ดำเนินการขนส่ง-ที่อยู่", "ผู้ดำเนินการขนส่ง-เบอร์โทร",
     "ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง", "ผู้ดำเนินการขนส่ง-ใบอนุญาต",
-    "ข้อมูลพนักงานขับรถ-ชื่อ", "ข้อมูลพนักงานขับรถ-เลขใบขับขี่", "ข้อมูลพนักงาน ขับรถ-เบอร์โทร", "ข้อมูลพนักงานขับรถ-ทะเบียนรถ",
+    "ข้อมูลพนักงานขับรถ-ชื่อ", "ข้อมูลพนักงานขับรถ-เลขใบขับขี่", "ข้อมูลพนักงานขับรถ-เบอร์โทร", "ข้อมูลพนักงานขับรถ-ทะเบียนรถ",
     "ข้อมูลพนักงานขับรถ-วิธีขนส่ง", "ข้อมูลพนักงานขับรถ-วันออกเดินทาง", "ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง",
     "ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง", "ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง",
     "การยืนยันและรับสินค้า-ผู้ออกเอกสาร", "การยืนยันและรับสินค้า-พนักงานขับรถ", "การยืนยันและรับสินค้า-ผู้รับสินค้า",
@@ -107,11 +107,13 @@ def generate_pdf_file(inv_no, items):
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
     c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
-    c.drawString(11*cm, h-4.8*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
-    c.drawString(11*cm, h-5.3*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
-    c.drawString(1.5*cm, h-6.8*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
-    c.drawString(1.5*cm, h-7.3*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
-    c.drawString(11*cm, h-7.3*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
+    
+    c.drawString(1.5*cm, h-6.0*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-6.5*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
+    
+    c.drawString(1.5*cm, h-7.2*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-7.7*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
+    c.drawString(11*cm, h-7.7*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
 
     c.line(1*cm, h-8.5*cm, 20*cm, h-8.5*cm)
 
@@ -151,6 +153,7 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
         if selected:
             sel_no = selected.split(" | ")[0]
             col_a, col_b = st.columns(2)
+            
             if col_a.button("📝 โหลดมาแก้ไข"):
                 row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = sel_no
@@ -160,6 +163,9 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                 
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
+                
+                # เพิ่มเติม: สร้าง PDF ทันทีเพื่อให้ดาวน์โหลดได้เลย
+                st.session_state.pdf_buffer = generate_pdf_file(sel_no, st.session_state.invoice_items)
                 st.rerun()
                 
             if col_b.button("🔄 โหลดมาสร้างซ้ำ"):
@@ -169,6 +175,7 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                     st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
+                st.session_state.pdf_buffer = None # ล้าง PDF เก่าออกเพราะนี่คือการสร้างใหม่
                 st.rerun()
 
 tabs = st.tabs(["📦 คู่ค้า", "🚛 ขนส่ง", "⛽ สินค้า", "🏢 บริษัท"])
@@ -176,7 +183,6 @@ with tabs[0]:
     for f in transport_fields[0:11]: st.text_input(f, key=f"in_{f}")
 with tabs[1]:
     for f in transport_fields[11:26]: st.text_input(f, key=f"in_{f}")
-
 with tabs[2]:
     ca, cb, cc, cd, ce = st.columns([3,1,1,2,2])
     p_n = ca.text_input("รายการ", key="t_n")
@@ -184,41 +190,29 @@ with tabs[2]:
     p_q = cc.text_input("จำนวน", key="t_q")
     p_p = cd.text_input("ช่องถัง", key="t_p")
     p_a = ce.text_input("ซีล", key="t_a")
-    
     if st.button("➕ เพิ่มรายการสินค้า"):
         if p_n and p_q:
-            st.session_state.invoice_items.append({
-                "product": p_n, "unit": p_u, "qty": p_q, "tank": p_p, "seal": p_a
-            })
+            st.session_state.invoice_items.append({"product":p_n, "unit":p_u, "qty":p_q, "tank":p_p, "seal":p_a})
             st.rerun()
         else:
             st.warning("กรุณากรอกชื่อรายการและจำนวน")
-
+    
     st.markdown("---")
     if st.session_state.invoice_items:
-        st.write("💡 **แก้ไขข้อมูล:** คลิกในช่องตารางแล้วพิมพ์ | **ลบแถว:** เลือกแถวแล้วกดปุ่ม Delete บนคีย์บอร์ด")
-        
-        # แสดงผลตารางด้วย data_editor
+        st.write("💡 **แก้ไขรายระเบียบ:** คลิกในตารางเพื่อพิมพ์แก้ได้ทันที | **ลบ:** เลือกแถวแล้วกดปุ่ม Delete")
         df_items = pd.DataFrame(st.session_state.invoice_items)
         edited_df = st.data_editor(
             df_items,
             column_config={
-                "product": "รายการ",
-                "unit": "หน่วย",
-                "qty": "จำนวน",
-                "tank": "ช่องถัง",
-                "seal": "ซีล",
+                "product": "รายการ", "unit": "หน่วย", "qty": "จำนวน", "tank": "ช่องถัง", "seal": "ซีล",
             },
-            num_rows="dynamic",  # ยอมให้เพิ่ม/ลบแถวได้อิสระ
+            num_rows="dynamic",
             use_container_width=True,
-            key="logistics_item_editor"
+            key="logistics_editor"
         )
-        
-        # ซิงค์ข้อมูลกลับเข้า session_state ทันทีที่มีการเปลี่ยนแปลง
         if not edited_df.equals(df_items):
             st.session_state.invoice_items = edited_df.to_dict('records')
-            # หมายเหตุ: ไม่ต้อง rerun ตรงนี้เพื่อให้ data_editor ทำงานได้ลื่นไหล
-
+        
         if st.button("🗑️ ล้างรายการสินค้าทั้งหมด"):
             st.session_state.invoice_items = []
             st.rerun()
@@ -229,7 +223,8 @@ with tabs[3]:
     st.session_state.form_date = st.text_input("วันที่", value=st.session_state.form_date)
     for f in transport_fields[26:]: st.text_input(f, key=f"in_{f}")
 
-if st.button("💾 บันทึกและออก PDF", type="primary", use_container_width=True):
+# ปรับปรุง: ปุ่มบันทึกแยกต่างหาก
+if st.button("💾 บันทึกและอัปเดต PDF", type="primary", use_container_width=True):
     def get_next_no():
         prefix = f"INV-{datetime.now().year}-{datetime.now().month:02d}"
         if inv_df.empty: return f"{prefix}-0001"
@@ -252,10 +247,17 @@ if st.button("💾 บันทึกและออก PDF", type="primary", us
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
     
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
-    st.session_state.editing_no = None
+    st.session_state.editing_no = final_no # ล็อกเลขที่ไว้หลังบันทึก
     st.cache_data.clear()
-    st.success(f"บันทึกข้อมูลเลขที่ {final_no} เรียบร้อยแล้ว")
+    st.success(f"บันทึกข้อมูลเลขที่ {final_no} สำเร็จ")
     st.rerun()
 
+# --- ส่วนแสดงปุ่มดาวน์โหลด ---
 if st.session_state.pdf_buffer:
-    st.download_button("📥 Download PDF", data=st.session_state.pdf_buffer, file_name=f"Invoice_{st.session_state.get('editing_no','New')}.pdf", mime="application/pdf")
+    # ตั้งชื่อไฟล์ให้ตรงกับบิลที่กำลังทำอยู่
+    filename = f"Invoice_{st.session_state.editing_no}.pdf" if st.session_state.editing_no else "Invoice_New.pdf"
+    st.download_button("📥 ดาวน์โหลดเอกสาร PDF", data=st.session_state.pdf_buffer, file_name=filename, mime="application/pdf", use_container_width=True)
+    
+    if st.button("🆕 เริ่มบิลใหม่ (Reset Form)"):
+        reset_form_action()
+        st.rerun()
