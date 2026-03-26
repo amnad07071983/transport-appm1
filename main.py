@@ -17,13 +17,14 @@ from reportlab.lib import colors
 # ================= 1. CONFIG & INITIALIZATION =================
 st.set_page_config(page_title="Logistics System Pro", layout="wide")
 
-# ลงทะเบียนฟอนต์ (ต้องมีไฟล์ใน Folder เดียวกัน)
+# ลงทะเบียนฟอนต์ (ถ้าไม่มีจะใช้ตัวหนามาตรฐานแทน)
+FONT_NAME = 'Helvetica-Bold'
 try:
-    pdfmetrics.registerFont(TTFont('ThaiFontBold', 'THSARABUN BOLD.ttf'))
-    FONT_NAME = 'ThaiFontBold'
-except Exception:
-    FONT_NAME = 'Helvetica-Bold'
-    st.warning("⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' ระบบจะใช้ Helvetica แทน")
+    if os.path.exists('THSARABUN BOLD.ttf'):
+        pdfmetrics.registerFont(TTFont('ThaiFontBold', 'THSARABUN BOLD.ttf'))
+        FONT_NAME = 'ThaiFontBold'
+except:
+        pass
 
 SHEET_ID = "1fl86CxqgxlXAYU63GQOdCrL2jbPvSUdoXd1ndQvjnBM"
 INV_SHEET = "Invoices"
@@ -45,7 +46,6 @@ def get_data_cached():
         items = client.worksheet(ITEM_SHEET).get_all_records()
         return pd.DataFrame(inv), pd.DataFrame(items)
     except Exception as e:
-        st.error(f"Error: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
 client = init_sheet()
@@ -67,50 +67,48 @@ transport_fields = [
     "ผู้จำหน่าย-ชื่อเอกสาร", "ผู้จำหน่าย-อธิบายเพิ่ม"
 ]
 
-# ================= 2. SESSION STATE MANAGEMENT =================
-def reset_form():
+# ================= 2. SESSION STATE =================
+if "invoice_items" not in st.session_state:
     st.session_state.invoice_items = []
-    st.session_state.editing_no = None  
+if "editing_no" not in st.session_state:
+    st.session_state.editing_no = None
+if "pdf_buffer" not in st.session_state:
+    st.session_state.pdf_buffer = None
+
+# สร้างฟิลด์ข้อมูลใน Session State ถ้ายังไม่มี
+for f in transport_fields:
+    if f"in_{f}" not in st.session_state:
+        st.session_state[f"in_{f}"] = ""
+if "form_date" not in st.session_state:
+    st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
+
+def reset_form_action():
+    st.session_state.invoice_items = []
+    st.session_state.editing_no = None
+    st.session_state.pdf_buffer = None
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields:
-        st.session_state[f"val_{f}"] = ""
-
-# Initialize keys
-if "invoice_items" not in st.session_state:
-    reset_form()
+        st.session_state[f"in_{f}"] = ""
 
 # ================= 3. PDF GENERATOR =================
-def create_pdf(inv_info, items):
+def generate_pdf_file(inv_no, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
-    
-    # วาดพื้นหลัง (ถ้ามี)
     if os.path.exists("p1.png"):
         c.drawImage("p1.png", 0, 0, width=w, height=h)
-
+    
     c.setFont(FONT_NAME, 14)
-    c.drawString(2*cm, h-3.2*cm, f"ลูกค้า: {inv_info.get('ผู้รับสินค้า-ชื่อ','')}")
-    c.drawRightString(19*cm, h-3.2*cm, f"เลขที่: {inv_info.get('invoice_no','')}")
-    c.drawString(2*cm, h-4.0*cm, f"วันที่: {inv_info.get('date','')}")
-
-    # ตารางสินค้า
+    c.drawString(2*cm, h-3.2*cm, f"ลูกค้า: {st.session_state.get('in_ผู้รับสินค้า-ชื่อ','')}")
+    c.drawRightString(19*cm, h-3.2*cm, f"เลขที่: {inv_no}")
+    
     header = [["ลำดับ", "รายการ", "หน่วย", "จำนวน", "ช่องถัง", "ซีล"]]
     rows = [[i+1, it['product'], it['unit'], it['qty'], it['price'], it['amount']] for i, it in enumerate(items)]
-    
     t = Table(header + rows, colWidths=[1.2*cm, 7.8*cm, 1.5*cm, 1.5*cm, 3*cm, 3*cm])
-    t.setStyle(TableStyle([
-        ('FONT', (0,0), (-1,-1), FONT_NAME, 11),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (3,1), (-1,-1), 'CENTER')
-    ]))
-    
-    t.wrapOn(c, 2*cm, h-12*cm)
-    t.drawOn(c, 2*cm, h-12*cm)
-    
-    c.showPage()
-    c.save()
+    t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 11), ('GRID', (0,0), (-1,-1), 0.5, colors.black)]))
+    t.wrapOn(c, 2*cm, h-11*cm)
+    t.drawOn(c, 2*cm, h-11*cm)
+    c.showPage(); c.save()
     buf.seek(0)
     return buf
 
@@ -123,163 +121,122 @@ def next_inv_no():
     return f"{prefix}-{last_seq + 1:04d}"
 
 # ================= 4. MAIN UI =================
-st.markdown("## 🚚 ระบบออกใบกำกับขนส่ง (M POWER OIL)")
+st.title("🚚 ระบบออกใบกำกับขนส่ง (M POWER OIL)")
 
-# --- ระบบค้นหา / แก้ไข / สร้างซ้ำ ---
-with st.expander("🔍 ค้นหาประวัติและจัดการบิล (แก้ไข/สร้างซ้ำ)"):
+# --- ปุ่มล้างแบบฟอร์ม ---
+if st.button("🆕 เริ่มบิลใหม่ / ล้างข้อมูล"):
+    reset_form_action()
+    st.rerun()
+
+with st.expander("🔍 ค้นหาบิลเก่า (เพื่อแก้ไข หรือ สร้างซ้ำ)", expanded=False):
     if not inv_df.empty:
         options = [f"{r[INV_KEY]} | {r.get('ผู้รับสินค้า-ชื่อ', '')}" for _, r in inv_df.iterrows()]
-        selected = st.selectbox("เลือกรายการที่จะดำเนินการ", [""] + options[::-1])
+        selected_bill = st.selectbox("ค้นหาเลขที่บิล", [""] + options[::-1])
         
-        if selected:
-            sel_no = selected.split(" | ")[0]
-            # ดึงข้อมูลจาก DataFrame
-            old_inv = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
-            current_it_key = ITEM_KEY if ITEM_KEY in item_df.columns else "invoice_no"
-            it_rows = item_df[item_df[current_it_key] == sel_no].to_dict('records')
+        if selected_bill:
+            sel_no = selected_bill.split(" | ")[0]
+            col_a, col_b = st.columns(2)
             
-            f_items = []
-            for i in it_rows:
-                f_items.append({
-                    "product": i.get('รายการ', i.get('product', '')),
-                    "unit": i.get('หน่วย', i.get('unit', '')),
-                    "qty": i.get('จำนวน', i.get('qty', '')),
-                    "price": str(i.get('หมายเลขช่องถัง', i.get('price', ''))),
-                    "amount": str(i.get('หมายเลขซีล', i.get('amount', '')))
-                })
-
-            col_btn1, col_btn2 = st.columns(2)
-            if col_btn1.button("🔄 ดึงข้อมูลมา สร้างซ้ำ (Copy)", use_container_width=True):
-                reset_form()
-                st.session_state.invoice_items = f_items
-                st.session_state.form_date = old_inv.get('date', datetime.now().strftime("%d/%m/%Y"))
-                for f in transport_fields: st.session_state[f"val_{f}"] = str(old_inv.get(f, ""))
-                st.info("คัดลอกข้อมูลเรียบร้อย (เลขที่บิลจะถูกรันใหม่เมื่อบันทึก)")
-                st.rerun()
-
-            if col_btn2.button("📝 ดึงข้อมูลมา แก้ไข (Edit)", use_container_width=True):
+            if col_a.button("📝 แก้ไขบิลนี้ (Edit)"):
+                old_inv = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = sel_no
-                st.session_state.invoice_items = f_items
-                st.session_state.form_date = old_inv.get('date', datetime.now().strftime("%d/%m/%Y"))
-                for f in transport_fields: st.session_state[f"val_{f}"] = str(old_inv.get(f, ""))
-                st.warning(f"กำลังแก้ไขบิลเลขที่: {sel_no}")
+                st.session_state.form_date = str(old_inv.get('date', ''))
+                for f in transport_fields:
+                    st.session_state[f"in_{f}"] = str(old_inv.get(f, ""))
+                
+                it_rows = item_df[item_df[ITEM_KEY if ITEM_KEY in item_df.columns else "invoice_no"] == sel_no].to_dict('records')
+                st.session_state.invoice_items = [{"product": i.get('รายการ', i.get('product','')), "unit": i.get('หน่วย', i.get('unit','')), "qty": i.get('จำนวน', i.get('qty','')), "price": str(i.get('หมายเลขช่องถัง', i.get('price',''))), "amount": str(i.get('หมายเลขซีล', i.get('amount','')))} for i in it_rows]
+                st.success(f"ดึงข้อมูลบิล {sel_no} มาแก้ไขแล้ว!")
                 st.rerun()
-    else:
-        st.info("ยังไม่มีข้อมูลในระบบ")
+
+            if col_b.button("🔄 สร้างซ้ำ (Copy)"):
+                old_inv = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
+                st.session_state.editing_no = None  # สร้างใหม่
+                for f in transport_fields:
+                    st.session_state[f"in_{f}"] = str(old_inv.get(f, ""))
+                
+                it_rows = item_df[item_df[ITEM_KEY if ITEM_KEY in item_df.columns else "invoice_no"] == sel_no].to_dict('records')
+                st.session_state.invoice_items = [{"product": i.get('รายการ', i.get('product','')), "unit": i.get('หน่วย', i.get('unit','')), "qty": i.get('จำนวน', i.get('qty','')), "price": str(i.get('หมายเลขช่องถัง', i.get('price',''))), "amount": str(i.get('หมายเลขซีล', i.get('amount','')))} for i in it_rows]
+                st.info("คัดลอกข้อมูลบิลเดิมมาแล้ว (จะรันเลขที่ใหม่เมื่อบันทึก)")
+                st.rerun()
 
 st.divider()
 
 # --- INPUT TABS ---
-t1, t2, t3, t4 = st.tabs(["📦 ผลิตภัณฑ์ & ปลายทาง", "🚛 ขนส่ง & พนักงานขับ", "⛽ รายการสินค้า", "🏢 ยืนยัน & ผู้จัดจำหน่าย"])
+t1, t2, t3, t4 = st.tabs(["📦 ผลิตภัณฑ์", "🚛 ขนส่ง", "⛽ รายการสินค้า", "🏢 ผู้จัดจำหน่าย"])
 
 with t1:
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("1.3 ผู้รับสินค้า (ปลายทาง)")
-        for f in transport_fields[0:4]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        for f in transport_fields[0:4]: st.text_input(f, key=f"in_{f}")
     with c2:
-        st.subheader("1.1 คลังรับผลิตภัณฑ์ (ต้นทาง)")
-        for f in transport_fields[4:7]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
-        st.subheader("1.2 ผู้รับผลิตภัณฑ์")
-        for f in transport_fields[7:11]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        for f in transport_fields[4:11]: st.text_input(f, key=f"in_{f}")
 
 with t2:
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("2.1 ผู้ดำเนินการขนส่ง")
-        for f in transport_fields[11:17]: 
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        for f in transport_fields[11:17]: st.text_input(f, key=f"in_{f}")
     with c2:
-        st.subheader("2.2 ข้อมูลพนักงานขับรถ")
-        for f in transport_fields[17:26]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        for f in transport_fields[17:26]: st.text_input(f, key=f"in_{f}")
 
 with t3:
-    st.subheader("3 รายการสินค้า")
+    st.subheader("เพิ่มสินค้า")
     ca, cb, cc, cd, ce = st.columns([3,1,1,2,2])
-    p_name = ca.text_input("รายการสินค้า", key="p_n")
-    p_unit = cb.text_input("หน่วย", value="ลิตร", key="p_u")
-    p_qty = cc.text_input("จำนวน", key="p_q")
-    p_tank = cd.text_input("ช่องถัง", key="p_t")
-    p_seal = ce.text_input("ซีล", key="p_s")
-    if st.button("➕ เพิ่มรายการสินค้า"):
+    p_name = ca.text_input("รายการ", key="tmp_p")
+    p_unit = cb.text_input("หน่วย", value="ลิตร", key="tmp_u")
+    p_qty = cc.text_input("จำนวน", key="tmp_q")
+    p_tank = cd.text_input("ช่องถัง", key="tmp_t")
+    p_seal = ce.text_input("ซีล", key="tmp_s")
+    if st.button("➕ เพิ่ม"):
         if p_name and p_qty:
             st.session_state.invoice_items.append({"product": p_name, "unit": p_unit, "qty": p_qty, "price": p_tank, "amount": p_seal})
             st.rerun()
     
+    st.write("---")
     for idx, item in enumerate(st.session_state.invoice_items):
-        cols = st.columns([4, 2, 4, 1])
-        cols[0].write(f"**{item['product']}**")
-        cols[1].write(f"{item['qty']} {item['unit']}")
-        cols[2].write(f"ถัง: {item['price']} | ซีล: {item['amount']}")
-        if cols[3].button("🗑️", key=f"del_{idx}"):
+        cx = st.columns([5, 1])
+        cx[0].write(f"{idx+1}. {item['product']} | {item['qty']} {item['unit']} | ถัง: {item['price']} ซีล: {item['amount']}")
+        if cx[1].button("🗑️", key=f"del_{idx}"):
             st.session_state.invoice_items.pop(idx)
             st.rerun()
 
 with t4:
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("4 การยืนยันและรับสินค้า")
-        for f in transport_fields[26:29]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        for f in transport_fields[26:29]: st.text_input(f, key=f"in_{f}")
     with c2:
-        st.subheader("หัวกระดาษ - ผู้จัดจำหน่าย")
-        st.session_state.form_date = st.text_input("วันที่ (dd/mm/yyyy)", value=st.session_state.form_date)
-        for f in transport_fields[29:]:
-            st.session_state[f"val_{f}"] = st.text_input(f, value=st.session_state.get(f"val_{f}", ""), key=f"in_{f}")
+        st.session_state.form_date = st.text_input("วันที่", value=st.session_state.form_date)
+        for f in transport_fields[29:]: st.text_input(f, key=f"in_{f}")
 
-# --- บันทึกข้อมูล & พิมพ์ ---
+# --- บันทึกและดาวน์โหลด ---
 st.divider()
-if st.session_state.editing_no:
-    st.warning(f"🔔 โหมดแก้ไข: กำลังปรับปรุงบิล {st.session_state.editing_no}")
 
-if st.button("💾 บันทึกข้อมูลและสร้าง PDF", type="primary", use_container_width=True):
+if st.session_state.pdf_buffer:
+    st.success("✅ บันทึกสำเร็จ! คุณสามารถดาวน์โหลด PDF ได้ที่ปุ่มด้านล่าง")
+    st.download_button("📥 ดาวน์โหลดไฟล์ PDF (พิมพ์)", data=st.session_state.pdf_buffer, file_name=f"Invoice.pdf", mime="application/pdf", use_container_width=True)
+
+if st.button("💾 บันทึกและส่งออก PDF", type="primary", use_container_width=True):
     if not st.session_state.invoice_items:
-        st.error("⚠️ กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ")
+        st.error("กรุณาเพิ่มสินค้าก่อนบันทึก")
     else:
-        with st.spinner("กำลังบันทึกข้อมูล..."):
-            # กำหนดเลขที่บิล (ถ้าแก้ใช้เลขเดิม ถ้าสร้างใหม่/ซ้ำ ใช้เลขใหม่)
-            is_edit = st.session_state.editing_no is not None
-            final_no = st.session_state.editing_no if is_edit else next_inv_no()
-
-            # กรณีแก้ไข: ลบแถวเก่าออกก่อน
-            if is_edit:
-                try:
-                    cells = ws_inv.findall(final_no)
-                    for cell in reversed(cells): ws_inv.delete_rows(cell.row)
-                    cells_it = ws_item.findall(final_no)
-                    for cell in reversed(cells_it): ws_item.delete_rows(cell.row)
-                except: pass
-
-            # บันทึก Invoice
-            inv_row = [final_no, st.session_state.form_date]
-            for f in transport_fields:
-                inv_row.append(st.session_state.get(f"val_{f}", ""))
-            ws_inv.append_row(inv_row)
-
-            # บันทึก Items
-            for it in st.session_state.invoice_items:
-                ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['price'], it['amount']])
-
-            st.success(f"✅ บันทึกเลขที่ {final_no} เรียบร้อยแล้ว!")
-            
-            # สร้าง PDF สำหรับ Download
-            pdf_data = create_pdf({
-                "invoice_no": final_no, 
-                "date": st.session_state.form_date,
-                "ผู้รับสินค้า-ชื่อ": st.session_state.get("val_ผู้รับสินค้า-ชื่อ", "")
-            }, st.session_state.invoice_items)
-            
-            st.download_button(
-                label="📥 คลิกเพื่อดาวน์โหลดเอกสาร PDF",
-                data=pdf_data,
-                file_name=f"{final_no}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
-            st.cache_data.clear()
-            if is_edit: st.session_state.editing_no = None # คืนค่าโหมดปกติ
+        new_no = st.session_state.editing_no if st.session_state.editing_no else next_inv_no()
+        
+        # ลบข้อมูลเก่ากรณีแก้ไข
+        if st.session_state.editing_no:
+            try:
+                for ws in [ws_inv, ws_item]:
+                    found = ws.findall(new_no)
+                    for f in reversed(found): ws.delete_rows(f.row)
+            except: pass
+        
+        # บันทึก
+        inv_row = [new_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields]
+        ws_inv.append_row(inv_row)
+        for it in st.session_state.invoice_items:
+            ws_item.append_row([new_no, it['product'], it['unit'], it['qty'], it['price'], it['amount']])
+        
+        # สร้าง PDF เก็บไว้ใน Session
+        st.session_state.pdf_buffer = generate_pdf_file(new_no, st.session_state.invoice_items)
+        st.session_state.editing_no = None 
+        st.cache_data.clear()
+        st.rerun()
