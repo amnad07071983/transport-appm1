@@ -8,7 +8,7 @@ import os
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import cm
+from reportlab.lib.units import cm, inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Table, TableStyle
@@ -87,13 +87,16 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- 0. Watermark (รูป p1.png เข้ม 60%) ---
+    # --- 0. Watermark (ขนาด 10cm, ลงจากกลาง 1.5 นิ้ว) ---
     try:
         if os.path.exists('p1.png'):
             c.saveState()
-            c.setFillAlpha(0.6)  # ความเข้ม 60%
-            img_w, img_h = 12*cm, 12*cm  # ปรับขนาดตามต้องการ
-            c.drawImage('p1.png', (w-img_w)/2, (h-img_h)/2, width=img_w, height=img_h, mask='auto')
+            c.setFillAlpha(0.6)
+            img_size = 10*cm # เล็กลงอีกนิด
+            x_pos = (w - img_size) / 2
+            # กึ่งกลางลบด้วย 1.5 นิ้ว
+            y_pos = ((h - img_size) / 2) - (1.5 * inch)
+            c.drawImage('p1.png', x_pos, y_pos, width=img_size, height=img_size, mask='auto')
             c.restoreState()
     except: pass
 
@@ -114,7 +117,7 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # ข้อมูลคู่ค้า (1.2 ต่อท้าย 1.1 และหมายเลขตั๋วอยู่ใต้ 1.2)
+    # ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -134,7 +137,7 @@ def generate_pdf_file(inv_no, items):
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า (ใส่คอมม่า + ยอดรวม)
+    # 3. ตารางสินค้า (เอาสีหัวตารางออก)
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
@@ -151,16 +154,19 @@ def generate_pdf_file(inv_no, items):
 
     t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
     t.setStyle(TableStyle([
-        ('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'), ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
-        ('SPAN', (3, -1), (4, -1)), ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('FONT', (0,0), (-1,-1), FONT_NAME, 10),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
+        ('SPAN', (3, -1), (4, -1)),
         ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
+        # นำ BACKGROUND ออกเพื่อให้หัวตารางเป็นสีขาว
     ]))
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # 4. ลายเซ็น
-    sig_y = h-23*cm
+    # 4. ลายเซ็น (เลื่อนลง 1.5 นิ้วจากจุดเดิม)
+    sig_y = (h - 23*cm) - (1.5 * inch)
     c.drawCentredString(4.5*cm, sig_y, "..................................")
     c.drawCentredString(4.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
     c.drawCentredString(10.5*cm, sig_y, "..................................")
