@@ -116,7 +116,7 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # ข้อมูลคู่ค้า
+    # 1. ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -163,7 +163,13 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # --- 4. ลายเซ็น ---
+    # --- เพิ่มส่วนที่ 4. การยืนยันและรับสินค้า ---
+    c.setFont(FONT_NAME, 11)
+    c.drawString(1.2*cm, h-17.5*cm, "4. การยืนยันและรับสินค้า")
+    c.setFont(FONT_NAME, 10)
+    c.drawString(1.5*cm, h-18.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
+
+    # --- 4. ลายเซ็น (เลื่อนตำแหน่งลงมาให้พอดีกับข้อความที่เพิ่ม) ---
     sig_y = (h - 23*cm) - (1.5 * inch)
     label_y = sig_y - 0.5*cm
     title_y = label_y - 0.6*cm
@@ -177,7 +183,7 @@ def generate_pdf_file(inv_no, items):
     c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
     c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
 
-    # จุดที่ 2: พนักงานขับรถ (ดึงชื่อจาก ข้อมูลพนักงานขับรถ-ชื่อ)
+    # จุดที่ 2: พนักงานขับรถ
     c.drawCentredString(10.5*cm, sig_y, "..................................")
     c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')} )")
     c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
