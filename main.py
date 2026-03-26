@@ -87,7 +87,7 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # Header
+    # --- Header ---
     c.setFont(FONT_NAME, 11)
     c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
     c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
@@ -107,17 +107,11 @@ def generate_pdf_file(inv_no, items):
     # 1. ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
-    
-    # 1.1 คลังรับผลิตภัณฑ์
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
     c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
-    
-    # 1.2 ผู้รับผลิตภัณฑ์ (ย้ายมาต่อท้าย 1.1 และเพิ่มหมายเลขตั๋ว)
     c.drawString(1.5*cm, h-6.0*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
     c.drawString(1.5*cm, h-6.5*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-7.0*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
-    
-    # 1.3 ผู้รับสินค้า (ปลายทาง)
     c.drawString(1.5*cm, h-7.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
     c.drawString(1.5*cm, h-8.2*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
 
@@ -130,14 +124,38 @@ def generate_pdf_file(inv_no, items):
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า
+    # 3. ตารางสินค้า พร้อมยอดรวมและคอมม่า
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
-    data_rows = [[i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), it.get('qty','')] for i, it in enumerate(items)]
+    data_rows = []
+    total_qty = 0.0
+
+    for i, it in enumerate(items):
+        try:
+            qty_val = float(str(it.get('qty', '0')).replace(',', ''))
+            total_qty += qty_val
+            formatted_qty = "{:,.0f}".format(qty_val)
+        except:
+            formatted_qty = it.get('qty', '')
+        
+        data_rows.append([i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), formatted_qty])
+
     while len(data_rows) < 4: data_rows.append(["","","","","",""])
+    
+    # แถวยอดรวม
+    data_rows.append(["", "", "", "รวมทั้งสิ้น", "", "{:,.0f}".format(total_qty)])
+
     t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
-    t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
-    t.wrapOn(c, 1*cm, h-16*cm)
-    t.drawOn(c, 1*cm, h-16*cm)
+    t.setStyle(TableStyle([
+        ('FONT', (0,0), (-1,-1), FONT_NAME, 10),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
+        ('SPAN', (3, -1), (4, -1)),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
+    ]))
+    t.wrapOn(c, 1*cm, h-16.5*cm)
+    t.drawOn(c, 1*cm, h-16.5*cm)
 
     # 4. ลายเซ็น
     sig_y = h-23*cm
@@ -171,7 +189,6 @@ with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"
                     st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
-                # เรียก PDF ทันทีเพื่อให้ดาวน์โหลดได้
                 st.session_state.pdf_buffer = generate_pdf_file(sel_no, st.session_state.invoice_items)
                 st.rerun()
                 
@@ -190,10 +207,11 @@ with tabs[0]:
     for f in transport_fields[0:11]: st.text_input(f, key=f"in_{f}")
 with tabs[1]:
     for f in transport_fields[11:26]: st.text_input(f, key=f"in_{f}")
+
 with tabs[2]:
     ca, cb, cc, cd, ce = st.columns([3,1,1,2,2])
     p_n = ca.text_input("รายการ", key="t_n")
-    p_u = cb.text_input("หน่วย", value="ลิตร", key="t_u")
+    p_u = cb.text_input("หน่วย", value="ลิตรม", key="t_u")
     p_q = cc.text_input("จำนวน", key="t_q")
     p_p = cd.text_input("ช่องถัง", key="t_p")
     p_a = ce.text_input("ซีล", key="t_a")
@@ -241,7 +259,6 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
     st.session_state.editing_no = final_no
     st.cache_data.clear()
-    st.success(f"บันทึกข้อมูลเลขที่ {final_no} สำเร็จ")
     st.rerun()
 
 if st.session_state.pdf_buffer:
