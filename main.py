@@ -87,7 +87,7 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- 0. Watermark ---
+    # --- 0. Watermark (Alpha 0.3) ---
     try:
         if os.path.exists('p1.png'):
             c.saveState()
@@ -99,7 +99,7 @@ def generate_pdf_file(inv_no, items):
             c.restoreState()
     except: pass
 
-    # --- 1. Header ---
+    # --- 1. Header (ขยับ เลขที่/วันที่ ไปทางขวาอีก 2 นิ้ว) ---
     c.setFont(FONT_NAME, 11)
     c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
     c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
@@ -111,8 +111,11 @@ def generate_pdf_file(inv_no, items):
     
     c.setFont(FONT_NAME, 10)
     c.drawRightString(19.5*cm, h-2.0*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
-    c.drawString(13*cm, h-2.7*cm, f"เลขที่ : {inv_no}")
-    c.drawString(13*cm, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
+    
+    # ตำแหน่งใหม่ที่ขยับไปทางขวา 2 นิ้ว
+    header_x_right = 13*cm + (2 * inch)
+    c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
+    c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
@@ -163,13 +166,13 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # --- เพิ่มส่วนที่ 4. การยืนยันและรับสินค้า ---
+    # 4. การยืนยันและรับสินค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-17.5*cm, "4. การยืนยันและรับสินค้า")
     c.setFont(FONT_NAME, 10)
     c.drawString(1.5*cm, h-18.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
-    # --- 4. ลายเซ็น (เลื่อนตำแหน่งลงมาให้พอดีกับข้อความที่เพิ่ม) ---
+    # --- 5. ลายเซ็น ---
     sig_y = (h - 23*cm) - (1.5 * inch)
     label_y = sig_y - 0.5*cm
     title_y = label_y - 0.6*cm
