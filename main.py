@@ -95,23 +95,22 @@ def generate_pdf_file(inv_no, items):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # --- ฟิลด์อธิบายเพิ่ม บนขวาสุด ---
-    c.setFont(FONT_NAME, 10)
-    extra_info = st.session_state.get('in_ผู้จำหน่าย-อธิบายเพิ่ม', '')
-    if extra_info:
-        c.drawRightString(19.5*cm, h-0.8*cm, f"{extra_info}")
-
     # --- ส่วนหัว (Header) ---
     c.setFont(FONT_NAME, 11)
+    
+    # ฝั่งซ้าย: ข้อมูลบริษัท (บรรทัดแรกอยู่ที่ h-1.5*cm)
     c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
     c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-2.5*cm, f"โทร.{st.session_state.get('in_ผู้จำหน่าย-เบอร์โทร', '')}")
     c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {st.session_state.get('in_ผู้จำหน่าย-เลขผู้เสียภาษี', '')}")
 
+    # ฝั่งขวาบนสุด: "ชื่อเอกสาร" (ระดับบรรทัดเดียวกับชื่อบริษัท h-1.5*cm)
     c.setFont(FONT_NAME, 14)
-    c.drawCentredString(15*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
+    c.drawRightString(19.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
+    
+    # ฝั่งขวาถัดลงมา: เลขที่และวันที่
     c.setFont(FONT_NAME, 10)
-    c.drawCentredString(15*cm, h-2.0*cm, f"(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
+    c.drawRightString(19.5*cm, h-2.0*cm, f"(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
     c.drawString(13*cm, h-2.7*cm, f"เลขที่ : {inv_no}")
     c.drawString(13*cm, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
 
