@@ -147,18 +147,19 @@ def generate_pdf_file(inv_no, items):
     c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง', '')}")
     c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     
-    # 2.2 ข้อมูลพนักงานขับรถ (เรียงลำดับ 9 รายการตามที่ระบุ)
-    c.drawString(11*cm, h-11.3*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
-    c.drawString(11*cm, h-11.8*cm, f"เลขใบขับขี่ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เลขใบขับขี่', '')}")
-    c.drawString(11*cm, h-12.3*cm, f"เบอร์โทร : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เบอร์โทร', '')}")
-    c.drawString(11*cm, h-12.8*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
-    c.drawString(11*cm, h-13.3*cm, f"วิธีขนส่ง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วิธีขนส่ง', '')}")
-    c.drawString(11*cm, h-13.8*cm, f"วันที่ออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันออกเดินทาง', '')}")
-    c.drawString(11*cm, h-14.3*cm, f"เวลาออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
-    c.drawString(11*cm, h-14.8*cm, f"วันที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')}")
-    c.drawString(11*cm, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
+    # 2.2 ข้อมูลพนักงานขับรถ (ขยับออกขวา 1.5 นิ้ว หรือประมาณ 11cm + 3.8cm = 14.8cm)
+    x_offset_2_2 = 11*cm + (1.5 * inch)
+    c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
+    c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เลขใบขับขี่', '')}")
+    c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เบอร์โทร', '')}")
+    c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
+    c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วิธีขนส่ง', '')}")
+    c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันออกเดินทาง', '')}")
+    c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
+    c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')}")
+    c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
 
-    # 3. รายละเอียดน้ำมันเชื้อเพลิง (ขยับลงตามข้อมูลพนักงานขับรถที่เพิ่มขึ้น)
+    # 3. รายละเอียดน้ำมันเชื้อเพลิง
     c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
 
     # ตารางสินค้า
