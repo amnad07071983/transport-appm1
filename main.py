@@ -112,43 +112,39 @@ def generate_pdf_file(inv_no, items):
     c.setFont(FONT_NAME, 10)
     c.drawRightString(19.5*cm, h-2.0*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
     
-    # ปรับตำแหน่ง เลขที่/วันที่ กลับมา 1 นิ้ว เพื่อไม่ให้ตกขอบ
     header_x_right = 13*cm + (1 * inch)
     c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
     c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # 1. ข้อมูลคู่ค้า (ปรับระยะบรรทัดเพื่อเพิ่มเลขประจำตัวผู้เสียภาษี)
+    # 1. ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
-    
-    # 1.1 คลังรับผลิตภัณฑ์
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
     c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
-    
-    # 1.2 ผู้รับผลิตภัณฑ์
     c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
     c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
     c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
-    
-    # 1.3 ผู้รับสินค้า
     c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
     c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
     c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้รับสินค้า-เลขผู้เสียภาษี', '')}")
 
     c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
 
-    # 2. ข้อมูลการขนส่ง (ขยับลงตามข้อ 1)
+    # 2. ข้อมูลการขนส่ง
     c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
     c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
     c.drawString(1.5*cm, h-11.8*cm, f"ใบอนุญาต : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
     c.drawString(11*cm, h-11.3*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-11.8*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า
+    # 3. รายละเอียดน้ำมันเชื้อเพลิง (หัวข้อตาราง)
+    c.drawString(1.2*cm, h-12.5*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+
+    # ตารางสินค้า (ปรับระยะ y-offset ให้พอดีกับหัวข้อ 3)
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
