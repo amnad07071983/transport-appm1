@@ -60,7 +60,7 @@ transport_fields = [
     "ข้อมูลพนักงานขับรถ-ชื่อ", "ข้อมูลพนักงานขับรถ-เลขใบขับขี่", "ข้อมูลพนักงานขับรถ-เบอร์โทร", "ข้อมูลพนักงานขับรถ-ทะเบียนรถ",
     "ข้อมูลพนักงานขับรถ-วิธีขนส่ง", "ข้อมูลพนักงานขับรถ-วันออกเดินทาง", "ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง",
     "ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง", "ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง",
-    "การยืนยันและรับสินค้า-ผู้ออกเอกสาร", "การยืนยันและรับสินค้า-พนักงานขับรถ", "การยืนยันและรับสินค้า-ผู้รับสินค้า",
+    "การยืนยันและรับสินค้า-ผู้ออกเอกสาร", "การยังยืนยันและรับสินค้า-พนักงานขับรถ", "การยืนยันและรับสินค้า-ผู้รับสินค้า",
     "ผู้จำหน่าย-ชื่อ", "ผู้จำหน่าย-ที่อยู่", "ผู้จำหน่าย-เลขผู้เสียภาษี", "ผู้จำหน่าย-เบอร์โทร",
     "ผู้จำหน่าย-ชื่อเอกสาร", "ผู้จำหน่าย-อธิบายเพิ่ม"
 ]
@@ -91,7 +91,7 @@ def generate_pdf_file(inv_no, items):
     try:
         if os.path.exists('p1.png'):
             c.saveState()
-            c.setFillAlpha(0.3)  # ปรับจางพิเศษ
+            c.setFillAlpha(0.3)
             img_size = 10*cm
             x_pos = (w - img_size) / 2
             y_pos = ((h - img_size) / 2) - (1.5 * inch)
@@ -116,7 +116,7 @@ def generate_pdf_file(inv_no, items):
 
     c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    # 1. ข้อมูลคู่ค้า
+    # ข้อมูลคู่ค้า
     c.setFont(FONT_NAME, 11)
     c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
     c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
@@ -136,7 +136,7 @@ def generate_pdf_file(inv_no, items):
     c.drawString(11*cm, h-9.9*cm, f"2.2 พนักงานขับรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
     c.drawString(11*cm, h-10.4*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
 
-    # 3. ตารางสินค้า (หัวตารางไม่มีสี)
+    # 3. ตารางสินค้า (หัวตารางสีขาว + ยอดรวมคอมม่า)
     header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
     data_rows = []
     total_qty = 0.0
@@ -163,14 +163,31 @@ def generate_pdf_file(inv_no, items):
     t.wrapOn(c, 1*cm, h-16.5*cm)
     t.drawOn(c, 1*cm, h-16.5*cm)
 
-    # 4. ลายเซ็น (เลื่อนลง 1.5 นิ้วจากตำแหน่งเดิม)
+    # --- 4. ลายเซ็น (เลื่อนลง 1.5 นิ้ว พร้อมข้อมูลระบุตำแหน่งและวันที่) ---
     sig_y = (h - 23*cm) - (1.5 * inch)
+    label_y = sig_y - 0.5*cm   # ชื่อในวงเล็บ
+    title_y = label_y - 0.6*cm # ชื่อตำแหน่ง
+    date_y = title_y - 0.6*cm  # วันที่
+    
+    c.setFont(FONT_NAME, 10)
+
+    # จุดที่ 1
     c.drawCentredString(4.5*cm, sig_y, "..................................")
-    c.drawCentredString(4.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
+    c.drawCentredString(4.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
+    c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
+    c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
+
+    # จุดที่ 2
     c.drawCentredString(10.5*cm, sig_y, "..................................")
-    c.drawCentredString(10.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-พนักงานขับรถ', '')} )")
+    c.drawCentredString(10.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-พนักงานขับรถ', '')} )")
+    c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
+    c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
+
+    # จุดที่ 3
     c.drawCentredString(16.5*cm, sig_y, "..................................")
-    c.drawCentredString(16.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
+    c.drawCentredString(16.5*cm, label_y, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
+    c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
+    c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
 
     c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
     c.showPage(); c.save(); buf.seek(0)
