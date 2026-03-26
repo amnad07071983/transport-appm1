@@ -20,7 +20,7 @@ st.set_page_config(page_title="Logistics System Pro", layout="wide")
 try:
     pdfmetrics.registerFont(TTFont('ThaiFontBold', 'THSARABUN BOLD.ttf'))
 except Exception as e:
-    st.error(f"⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' กรุณาตรวจสอบว่าไฟล์ฟอนต์อยู่ในโฟลเดอร์เดียวกับโค้ด: {e}")
+    st.error(f"⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' กรุณาตรวจสอบว่าไฟล์ฟอนต์อยู่ในโฟลเดอร์เดียวกับโค้ด")
 
 SHEET_ID = "1fl86CxqgxlXAYU63GQOdCrL2jbPvSUdoXd1ndQvjnBM"
 INV_SHEET = "Invoices"
@@ -84,27 +84,30 @@ if "invoice_items" not in st.session_state:
 # ================= 3. CORE FUNCTIONS (PDF & LOGIC) =================
 
 def add_single_watermark(c, w, h):
-    """ฟังก์ชันจัดการรูปภาพลายน้ำ p1.png และ p2.png ใน PDF"""
+    """ฟังก์ชันจัดการรูปภาพ p2.png (พื้นหลังเต็มหน้า) และ p1.png (ลายน้ำจาง)"""
     try:
-        c.saveState()
-        c.setFillAlpha(0.18) 
-        img_w = 12*cm
-        img_h = 12*cm
-        x = (w - img_w) / 2
-        center_y = (h - img_h) / 2
-        y = center_y - (1.5 * inch)
-        
-        # แสดงรูป p1.png
-        if os.path.exists("p1.png"):
-            c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
-            
-        # เพิ่มรูป p2.png ตามที่ต้องการ (แสดงทับหรือตำแหน่งใกล้เคียงกัน)
+        # --- 1. แสดงรูป p2.png เป็นพื้นหลังเต็มหน้า A4 (ความเข้มปกติ 100%) ---
         if os.path.exists("p2.png"):
-            c.drawImage("p2.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+            c.saveState()
+            c.setFillAlpha(1.0) 
+            # วาดจากมุมล่างซ้าย (0,0) ให้กว้าง w สูง h ตามขนาด A4
+            c.drawImage("p2.png", 0, 0, width=w, height=h, mask='auto')
+            c.restoreState()
+
+        # --- 2. แสดงรูป p1.png เป็นลายน้ำจางๆ ตรงกลาง (ความจาง 18%) ---
+        if os.path.exists("p1.png"):
+            c.saveState()
+            c.setFillAlpha(0.18) 
+            img_w = 12*cm
+            img_h = 12*cm
+            x = (w - img_w) / 2
+            center_y = (h - img_h) / 2
+            y = center_y - (1.5 * inch)
+            c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+            c.restoreState()
             
-        c.restoreState()
     except Exception as e:
-        print(f"Watermark rendering error: {e}")
+        print(f"Image rendering error: {e}")
         pass
 
 def next_inv_no():
