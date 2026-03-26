@@ -15,7 +15,7 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 
 # ================= 1. CONFIG & INITIALIZATION =================
-st.set_page_config(page_title="Logistics System Pro", layout="wide")
+st.set_page_config(page_title="M POWER OIL - Logistics System", layout="wide")
 
 # ลงทะเบียนฟอนต์ภาษาไทย (ต้องมีไฟล์ THSARABUN BOLD.ttf ในโฟลเดอร์เดียวกัน)
 FONT_NAME = 'Helvetica-Bold'
@@ -89,159 +89,171 @@ def reset_form_action():
     for f in transport_fields:
         st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR (ALL FIELDS) =================
+# ================= 3. PDF GENERATOR (MATCHING IMAGE LAYOUT) =================
 def generate_pdf_file(inv_no, items):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
-    if os.path.exists("p1.png"):
-        c.drawImage("p1.png", 0, 0, width=w, height=h)
     
-    # ส่วนหัว
-    c.setFont(FONT_NAME, 16)
-    c.drawCentredString(w/2, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่ง')}")
-    
+    # ส่วนหัว (Header)
     c.setFont(FONT_NAME, 11)
-    c.drawString(2*cm, h-2.5*cm, f"ผู้จำหน่าย: {st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
-    c.drawString(2*cm, h-3.0*cm, f"ที่อยู่: {st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
-    c.drawRightString(19*cm, h-2.5*cm, f"เลขที่บิล: {inv_no}")
-    c.drawRightString(19*cm, h-3.0*cm, f"วันที่: {st.session_state.get('form_date', '')}")
+    c.drawString(1.5*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-2.0*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ที่อยู่', '')}")
+    c.drawString(1.5*cm, h-2.5*cm, f"โทร.{st.session_state.get('in_ผู้จำหน่าย-เบอร์โทร', '')}")
+    c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {st.session_state.get('in_ผู้จำหน่าย-เลขผู้เสียภาษี', '')}")
 
-    # ข้อมูลต้นทาง-ปลายทาง
-    c.line(2*cm, h-3.8*cm, 19*cm, h-3.8*cm)
-    curr_y = h-4.3*cm
-    c.drawString(2*cm, curr_y, f"ต้นทาง: {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')} | ภาษี: {st.session_state.get('in_คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
-    c.drawString(2*cm, curr_y-0.4*cm, f"ที่อยู่คลัง: {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
+    c.setFont(FONT_NAME, 14)
+    c.drawCentredString(15*cm, h-1.5*cm, f"{st.session_state.get('in_ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
+    c.setFont(FONT_NAME, 10)
+    c.drawCentredString(15*cm, h-2.0*cm, f"(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
+    c.drawString(13*cm, h-2.7*cm, f"เลขที่ : {inv_no}")
+    c.drawString(13*cm, h-3.2*cm, f"วันที่ : {st.session_state.get('form_date', '')}")
+
+    c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
+
+    # 1. ข้อมูลคู่ค้า
+    c.setFont(FONT_NAME, 11)
+    c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
+    c.drawString(1.5*cm, h-4.8*cm, "1.1 คลังรับผลิตภัณฑ์ (ต้นทาง)")
+    c.drawString(1.5*cm, h-5.3*cm, f"ชื่อ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
+    c.drawString(1.5*cm, h-6.3*cm, f"ที่อยู่ : {st.session_state.get('in_คลังรับผลิตภัณฑ์-ที่อยู่', '')}")
+
+    c.drawString(11*cm, h-4.8*cm, "1.2 ผู้รับผลิตภัณฑ์")
+    c.drawString(11*cm, h-5.3*cm, f"ชื่อ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ชื่อ', '')}")
+    c.drawString(11*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี', '')}")
+    c.drawString(11*cm, h-6.3*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-ที่อยู่', '')}")
+
+    c.drawString(1.5*cm, h-7.3*cm, "1.3 ผู้รับสินค้า (ปลายทาง)")
+    c.drawString(1.5*cm, h-7.8*cm, f"ชื่อ : {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-8.3*cm, f"ที่อยู่ : {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
+    c.drawString(11*cm, h-8.3*cm, f"ตั๋วขนย้ายเลขที่ : {st.session_state.get('in_ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว', '')}")
+
+    c.line(1*cm, h-9.8*cm, 20*cm, h-9.8*cm)
+
+    # 2. ข้อมูลการขนส่ง
+    c.drawString(1.2*cm, h-10.3*cm, "2. ข้อมูลการขนส่ง")
+    c.drawString(1.5*cm, h-10.8*cm, "2.1 ผู้ดำเนินการขนส่ง")
+    c.drawString(1.5*cm, h-11.3*cm, f"ชื่อ : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')}")
+    c.drawString(1.5*cm, h-11.8*cm, f"ใบอนุญาตเลขที่ : {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
+
+    c.drawString(11*cm, h-10.8*cm, "2.2 ข้อมูลพนักงานขับรถ")
+    c.drawString(11*cm, h-11.3*cm, f"ชื่อ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')}")
+    c.drawString(11*cm, h-11.8*cm, f"ทะเบียนรถ : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
+    c.drawString(11*cm, h-12.3*cm, f"วัน/เวลาออก : {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันออกเดินทาง', '')} {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
+
+    c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
+
+    # 3. ตารางรายการสินค้า
+    c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+    header = [["ลำดับ", "ช่องถัง", "หมายเลขซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
+    data_rows = [[i+1, it['price'], it['amount'], it['product'], it['unit'], it['qty']] for i, it in enumerate(items)]
+    while len(data_rows) < 4: data_rows.append(["", "", "", "", "", ""])
     
-    c.drawString(11*cm, curr_y, f"ผู้รับสินค้า: {st.session_state.get('in_ผู้รับสินค้า-ชื่อ', '')}")
-    c.drawString(11*cm, curr_y-0.4*cm, f"ภาษีผู้รับ: {st.session_state.get('in_ผู้รับสินค้า-เลขผู้เสียภาษี', '')}")
-    c.drawString(11*cm, curr_y-0.8*cm, f"ที่อยู่ผู้รับ: {st.session_state.get('in_ผู้รับสินค้า-ที่อยู่', '')}")
+    t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
+    t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
+    t.wrapOn(c, 1*cm, h-20*cm)
+    t.drawOn(c, 1*cm, h-20*cm)
 
-    # ข้อมูลขนส่ง
-    curr_y -= 1.8*cm
-    c.rect(2*cm, curr_y-2.2*cm, 17*cm, 2.6*cm)
-    c.drawString(2.2*cm, curr_y, f"ขนส่งโดย: {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ชื่อ', '')} | ใบอนุญาต: {st.session_state.get('in_ผู้ดำเนินการขนส่ง-ใบอนุญาต', '')}")
-    c.drawString(2.2*cm, curr_y-0.5*cm, f"พนักงานขับ: {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ชื่อ', '')} | ทะเบียน: {st.session_state.get('in_ข้อมูลพนักงานขับรถ-ทะเบียนรถ', '')}")
-    c.drawString(2.2*cm, curr_y-1.0*cm, f"กำหนดเวลาเดินทาง: {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันออกเดินทาง', '')} {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง', '')}")
-    c.drawString(2.2*cm, curr_y-1.5*cm, f"ถึงปลายทาง: {st.session_state.get('in_ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง', '')} {st.session_state.get('in_ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง', '')}")
+    # 4. การยืนยัน
+    sig_y = h-24*cm
+    c.drawCentredString(4.5*cm, sig_y, "..................................")
+    c.drawCentredString(4.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '')} )")
+    c.drawCentredString(4.5*cm, sig_y-1*cm, "ผู้ออกเอกสาร")
 
-    # ตารางสินค้า
-    curr_y -= 3.2*cm
-    header = [["ลำดับ", "รายการสินค้า", "หน่วย", "จำนวน", "ช่องถัง", "ซีล"]]
-    data = [[i+1, it['product'], it['unit'], it['qty'], it['price'], it['amount']] for i, it in enumerate(items)]
-    while len(data) < 5: data.append(["", "", "", "", "", ""])
-    t = Table(header + data, colWidths=[1.2*cm, 7.3*cm, 1.5*cm, 2*cm, 2.5*cm, 2.5*cm])
-    t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10), ('GRID', (0,0), (-1,-1), 0.5, colors.black), ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke)]))
-    t.wrapOn(c, 2*cm, curr_y)
-    t.drawOn(c, 2*cm, curr_y - (len(data)*0.55*cm))
+    c.drawCentredString(10.5*cm, sig_y, "..................................")
+    c.drawCentredString(10.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-พนักงานขับรถ', '')} )")
+    c.drawCentredString(10.5*cm, sig_y-1*cm, "พนักงานขับรถ")
 
-    # ส่วนท้าย (ลายเซ็น)
-    footer_y = 3*cm
-    c.drawString(2*cm, footer_y, f"ผู้ดำเนินการ: {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้ออกเอกสาร', '..........')}")
-    c.drawString(8*cm, footer_y, f"พนักงานขับ: {st.session_state.get('in_การยืนยันและรับสินค้า-พนักงานขับรถ', '..........')}")
-    c.drawString(14*cm, footer_y, f"ผู้รับสินค้า: {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '..........')}")
-    
+    c.drawCentredString(16.5*cm, sig_y, "..................................")
+    c.drawCentredString(16.5*cm, sig_y-0.5*cm, f"( {st.session_state.get('in_การยืนยันและรับสินค้า-ผู้รับสินค้า', '')} )")
+    c.drawCentredString(16.5*cm, sig_y-1*cm, "ผู้รับสินค้า")
+
     c.showPage(); c.save(); buf.seek(0)
     return buf
 
-def next_inv_no():
-    prefix = f"INV-{datetime.now().year}-{datetime.now().month:02d}"
-    if inv_df.empty: return f"{prefix}-0001"
-    curr = inv_df[inv_df[INV_KEY].astype(str).str.startswith(prefix)]
-    if curr.empty: return f"{prefix}-0001"
-    last_seq = int(str(curr[INV_KEY].iloc[-1]).split('-')[-1])
-    return f"{prefix}-{last_seq + 1:04d}"
-
 # ================= 4. MAIN UI =================
-st.title("🚚 M POWER OIL - ระบบออกใบกำกับ")
+st.title("🚚 M POWER OIL - LOGISTICS")
 
-col_top1, col_top2 = st.columns([6, 2])
-with col_top2:
-    if st.button("🆕 เริ่มบิลใหม่", use_container_width=True):
-        reset_form_action()
-        st.rerun()
-
-with st.expander("🔍 ค้นหา จัดการข้อมูลเก่า (แก้ไข/สร้างซ้ำ)"):
+with st.expander("🔍 ค้นหา/แก้ไข/สร้างซ้ำ"):
     if not inv_df.empty:
         options = [f"{r[INV_KEY]} | {r.get('ผู้รับสินค้า-ชื่อ', '')}" for _, r in inv_df.iterrows()]
-        selected_bill = st.selectbox("เลือกบิล", [""] + options[::-1])
-        if selected_bill:
-            sel_no = selected_bill.split(" | ")[0]
-            c_btn1, c_btn2 = st.columns(2)
-            if c_btn1.button("📝 แก้ไขบิลนี้"):
-                old_inv = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
+        selected = st.selectbox("เลือกบิล", [""] + options[::-1])
+        if selected:
+            sel_no = selected.split(" | ")[0]
+            c1, c2 = st.columns(2)
+            if c1.button("📝 แก้ไข"):
+                old = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = sel_no
-                st.session_state.form_date = str(old_inv.get('date', ''))
-                for f in transport_fields: st.session_state[f"in_{f}"] = str(old_inv.get(f, ""))
+                for f in transport_fields: st.session_state[f"in_{f}"] = str(old.get(f, ""))
                 it_rows = item_df[item_df[ITEM_KEY if ITEM_KEY in item_df.columns else "invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('รายการ', i.get('product','')), "unit": i.get('หน่วย', i.get('unit','')), "qty": i.get('จำนวน', i.get('qty','')), "price": str(i.get('หมายเลขช่องถัง', i.get('price',''))), "amount": str(i.get('หมายเลขซีล', i.get('amount','')))} for i in it_rows]
                 st.rerun()
-            if c_btn2.button("🔄 สร้างซ้ำจากบิลนี้"):
-                old_inv = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
+            if c2.button("🔄 สร้างซ้ำ"):
+                old = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
                 st.session_state.editing_no = None
-                for f in transport_fields: st.session_state[f"in_{f}"] = str(old_inv.get(f, ""))
+                for f in transport_fields: st.session_state[f"in_{f}"] = str(old.get(f, ""))
                 it_rows = item_df[item_df[ITEM_KEY if ITEM_KEY in item_df.columns else "invoice_no"] == sel_no].to_dict('records')
                 st.session_state.invoice_items = [{"product": i.get('รายการ', i.get('product','')), "unit": i.get('หน่วย', i.get('unit','')), "qty": i.get('จำนวน', i.get('qty','')), "price": str(i.get('หมายเลขช่องถัง', i.get('price',''))), "amount": str(i.get('หมายเลขซีล', i.get('amount','')))} for i in it_rows]
                 st.rerun()
 
-st.divider()
-t1, t2, t3, t4 = st.tabs(["📦 สินค้า & ปลายทาง", "🚛 ขนส่ง", "⛽ รายการ", "🏢 ผู้จัดจำหน่าย"])
-with t1:
+tabs = st.tabs(["📦 สินค้า/ปลายทาง", "🚛 ขนส่ง", "⛽ รายการสินค้า", "🏢 ผู้จัดจำหน่าย"])
+with tabs[0]:
     c1, c2 = st.columns(2)
-    with c1:
+    with c1: 
         for f in transport_fields[0:4]: st.text_input(f, key=f"in_{f}")
-    with c2:
+    with c2: 
         for f in transport_fields[4:11]: st.text_input(f, key=f"in_{f}")
-with t2:
+with tabs[1]:
     c1, c2 = st.columns(2)
-    with c1:
+    with c1: 
         for f in transport_fields[11:17]: st.text_input(f, key=f"in_{f}")
-    with c2:
+    with c2: 
         for f in transport_fields[17:26]: st.text_input(f, key=f"in_{f}")
-with t3:
+with tabs[2]:
     ca, cb, cc, cd, ce = st.columns([3,1,1,2,2])
-    p_n = ca.text_input("รายการ", key="tmp_p")
+    p_n = ca.text_input("รายการ", key="tmp_n")
     p_u = cb.text_input("หน่วย", value="ลิตร", key="tmp_u")
     p_q = cc.text_input("จำนวน", key="tmp_q")
     p_t = cd.text_input("ช่องถัง", key="tmp_t")
     p_s = ce.text_input("ซีล", key="tmp_s")
-    if st.button("➕ เพิ่มสินค้า"):
-        if p_n and p_q:
-            st.session_state.invoice_items.append({"product": p_n, "unit": p_u, "qty": p_q, "price": p_t, "amount": p_s})
-            st.rerun()
-    for idx, item in enumerate(st.session_state.invoice_items):
-        cx = st.columns([5, 1])
-        cx[0].write(f"{idx+1}. {item['product']} | {item['qty']} {item['unit']} | ถัง: {item['price']} ซีล: {item['amount']}")
-        if cx[1].button("🗑️", key=f"del_{idx}"):
-            st.session_state.invoice_items.pop(idx); st.rerun()
-with t4:
+    if st.button("➕ เพิ่ม"):
+        st.session_state.invoice_items.append({"product": p_n, "unit": p_u, "qty": p_q, "price": p_t, "amount": p_s})
+        st.rerun()
+    for idx, it in enumerate(st.session_state.invoice_items):
+        st.write(f"{idx+1}. {it['product']} {it['qty']} {it['unit']} [ช่องถัง: {it['price']}]")
+with tabs[3]:
     c1, c2 = st.columns(2)
-    with c1:
+    with c1: 
         for f in transport_fields[26:29]: st.text_input(f, key=f"in_{f}")
-    with c2:
+    with c2: 
         st.session_state.form_date = st.text_input("วันที่", value=st.session_state.form_date)
         for f in transport_fields[29:]: st.text_input(f, key=f"in_{f}")
 
-st.divider()
 if st.session_state.pdf_buffer:
-    st.download_button("📥 ดาวน์โหลดไฟล์ PDF เพื่อสั่งพิมพ์", data=st.session_state.pdf_buffer, file_name="Invoice.pdf", mime="application/pdf", use_container_width=True)
+    st.download_button("📥 ดาวน์โหลด PDF", data=st.session_state.pdf_buffer, file_name="Invoice.pdf", mime="application/pdf", use_container_width=True)
 
-if st.button("💾 บันทึกข้อมูลและสร้างไฟล์ PDF", type="primary", use_container_width=True):
-    if not st.session_state.invoice_items:
-        st.error("กรุณาเพิ่มรายการสินค้า")
-    else:
-        new_no = st.session_state.editing_no if st.session_state.editing_no else next_inv_no()
-        if st.session_state.editing_no: # ลบเก่าเพื่อทับใหม่
-            try:
-                for ws in [ws_inv, ws_item]:
-                    found = ws.findall(new_no)
-                    for f in reversed(found): ws.delete_rows(f.row)
-            except: pass
-        inv_row = [new_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields]
-        ws_inv.append_row(inv_row)
-        for it in st.session_state.invoice_items:
-            ws_item.append_row([new_no, it['product'], it['unit'], it['qty'], it['price'], it['amount']])
-        st.session_state.pdf_buffer = generate_pdf_file(new_no, st.session_state.invoice_items)
-        st.session_state.editing_no = None
-        st.cache_data.clear()
-        st.rerun()
+if st.button("💾 บันทึกและออก PDF", type="primary", use_container_width=True):
+    def next_no():
+        prefix = f"INV-{datetime.now().year}-{datetime.now().month:02d}"
+        if inv_df.empty: return f"{prefix}-0001"
+        curr = inv_df[inv_df[INV_KEY].astype(str).str.startswith(prefix)]
+        if curr.empty: return f"{prefix}-0001"
+        return f"{prefix}-{int(str(curr[INV_KEY].iloc[-1]).split('-')[-1]) + 1:04d}"
+    
+    final_no = st.session_state.editing_no if st.session_state.editing_no else next_no()
+    if st.session_state.editing_no:
+        try:
+            for ws in [ws_inv, ws_item]:
+                found = ws.findall(final_no)
+                for f in reversed(found): ws.delete_rows(f.row)
+        except: pass
+    
+    ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
+    for it in st.session_state.invoice_items:
+        ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['price'], it['amount']])
+    
+    st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
+    st.session_state.editing_no = None
+    st.cache_data.clear()
+    st.rerun()
