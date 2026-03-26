@@ -19,8 +19,8 @@ st.set_page_config(page_title="Logistics System Pro", layout="wide")
 
 try:
     pdfmetrics.registerFont(TTFont('ThaiFontBold', 'THSARABUN BOLD.ttf'))
-except:
-    st.error("⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' กรุณาตรวจสอบว่าไฟล์ฟอนต์อยู่ในโฟลเดอร์เดียวกับโค้ด")
+except Exception as e:
+    st.error(f"⚠️ ไม่พบไฟล์ฟอนต์ 'THSARABUN BOLD.ttf' กรุณาตรวจสอบว่าไฟล์ฟอนต์อยู่ในโฟลเดอร์เดียวกับโค้ด: {e}")
 
 SHEET_ID = "1fl86CxqgxlXAYU63GQOdCrL2jbPvSUdoXd1ndQvjnBM"
 INV_SHEET = "Invoices"
@@ -84,6 +84,7 @@ if "invoice_items" not in st.session_state:
 # ================= 3. CORE FUNCTIONS (PDF & LOGIC) =================
 
 def add_single_watermark(c, w, h):
+    """ฟังก์ชันจัดการรูปภาพลายน้ำ p1.png และ p2.png ใน PDF"""
     try:
         c.saveState()
         c.setFillAlpha(0.18) 
@@ -92,13 +93,21 @@ def add_single_watermark(c, w, h):
         x = (w - img_w) / 2
         center_y = (h - img_h) / 2
         y = center_y - (1.5 * inch)
-        c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+        
+        # แสดงรูป p1.png
+        if os.path.exists("p1.png"):
+            c.drawImage("p1.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+            
+        # เพิ่มรูป p2.png ตามที่ต้องการ (แสดงทับหรือตำแหน่งใกล้เคียงกัน)
+        if os.path.exists("p2.png"):
+            c.drawImage("p2.png", x, y, width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+            
         c.restoreState()
-    except:
+    except Exception as e:
+        print(f"Watermark rendering error: {e}")
         pass
 
 def next_inv_no():
-    # ดึงข้อมูลสดๆ จาก Sheet เพื่อไม่ให้เลขซ้ำ (ไม่ใช้ Cache)
     client_fresh = init_sheet()
     data = client_fresh.worksheet(INV_SHEET).get_all_records()
     df_fresh = pd.DataFrame(data)
@@ -112,7 +121,6 @@ def next_inv_no():
     if current_month_docs.empty:
         return f"{prefix}-0001"
     try:
-        # ดึงเลขสูงสุดในเดือนนั้นๆ มา +1
         last_no = current_month_docs["invoice_no"].iloc[-1]
         last_seq = int(str(last_no).split('-')[-1])
         return f"{prefix}-{last_seq + 1:04d}"
@@ -394,7 +402,6 @@ if not st.session_state.editing_no:
         if not customer or not comp_name: st.error("กรุณากรอกชื่อลูกค้าและข้อมูลบริษัทให้ครบถ้วน")
         else:
             with st.spinner("กำลังบันทึก..."):
-                # รันเลขใหม่จังหวะนี้ เพื่อให้ได้เลขล่าสุดจริงๆ
                 new_no = next_inv_no() 
                 data_pdf = get_final_data(new_no, invoice_date) 
                 ws_inv.append_row(list(data_pdf.values()))
