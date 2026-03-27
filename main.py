@@ -211,7 +211,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-22.5*cm, 20*cm, h-22.5*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-23.0*cm, "  การยืนยันและรับสินค้า")
+        c.drawString(1.2*cm, h-23.0*cm, "  7.การยืนยันและรับสินค้า")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-23.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
