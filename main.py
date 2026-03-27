@@ -279,7 +279,7 @@ with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิล�
             quick_pdf = generate_pdf_file(sel_no, it_rows, data_dict=row_data)
             col_c.download_button("📥 ดาวน์โหลด PDF (ทันที)", data=quick_pdf, file_name=f"Invoice_{sel_no}.pdf", mime="application/pdf")
 
-tabs = st.tabs(["📦 คู่ค้า", "🚛 ผู้ขนส่งขนส่ง", "⛽ สินค้าที่ขนย้าย", "🏢 ผู้จัดจำหน่าย"])
+tabs = st.tabs(["📦 คู่ค้า", "🚛 ผู้ขนส่ง", "⛽ สินค้าที่ขนย้าย", "🏢 ผู้จัดจำหน่าย"])
 with tabs[0]:
     for f in transport_fields[0:11]: st.text_input(f, key=f"in_{f}")
 with tabs[1]:
