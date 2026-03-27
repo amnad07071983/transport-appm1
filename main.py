@@ -128,7 +128,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-4.0*cm, 20*cm, h-4.0*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.7*cm, "คลังรับน้ำมัน (ต้นทาง)")
+        c.drawString(1.2*cm, h-4.7*cm, " คลังรับน้ำมัน (ต้นทาง)")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-5.3*cm, f"ชื่อคลัง : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-5.8*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
@@ -153,11 +153,11 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 2. ข้อมูลการขนส่ง (ปรับลำดับหัวข้อ 2.1 และ 2.2 ตามสั่ง) ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-12.4*cm, "ข้อมูลการขนส่ง")
+        c.drawString(1.2*cm, h-12.4*cm, " ข้อมูลการขนส่ง")
         c.setFont(FONT_NAME, 11)
         
         # 2.1 ผู้ดำเนินการขนส่ง
-        c.drawString(1.5*cm, h-13.0*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
+        c.drawString(1.5*cm, h-13.0*cm, f"ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
         c.drawString(1.5*cm, h-13.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-14.0*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
         c.drawString(1.5*cm, h-14.5*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
@@ -166,7 +166,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         
         # 2.2 พนักงานขับรถ
         x_col2 = 11*cm + (1.5 * inch)
-        c.drawString(x_col2, h-13.0*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
+        c.drawString(x_col2, h-13.0*cm, f"พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
         c.drawString(x_col2, h-13.5*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
         c.drawString(x_col2, h-14.0*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
         c.drawString(x_col2, h-14.5*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
@@ -180,7 +180,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 3. รายละเอียดน้ำมัน ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-18.0*cm, "รายละเอียดน้ำมันเชื้อเพลิง")
+        c.drawString(1.2*cm, h-18.0*cm, " รายละเอียดน้ำมันเชื้อเพลิง")
         
         header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
         data_rows = []
@@ -203,7 +203,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-22.5*cm, 20*cm, h-22.5*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-23.0*cm, "การยืนยันและรับสินค้า")
+        c.drawString(1.2*cm, h-23.0*cm, " การยืนยันและรับสินค้า")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-23.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
