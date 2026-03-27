@@ -81,13 +81,12 @@ def reset_form_action():
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR (UPDATED TO 4 PAGES) =================
+# ================= 3. PDF GENERATOR (4 PAGES + LARGE HEADERS & SIGNATURE) =================
 def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # รายละเอียดหัวกระดาษแต่ละแผ่น
     page_labels = [
         "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)",
         "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง",
@@ -100,11 +99,11 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         return st.session_state.get(f"in_{key}", default)
 
     for label in page_labels:
-        # --- 1. หัวกระดาษระบุสถานะเอกสาร ---
+        # หัวกระดาษระบุแผ่น
         c.setFont(FONT_NAME, 10)
         c.drawString(1.5*cm, h-0.8*cm, label)
 
-        # --- 2. ลายน้ำ (ถ้ามี) ---
+        # ลายน้ำ
         try:
             if os.path.exists('p1.png'):
                 c.saveState()
@@ -116,7 +115,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
                 c.restoreState()
         except: pass
 
-        # --- 3. ข้อมูลผู้จำหน่าย ---
+        # ข้อมูลบริษัทผู้จำหน่าย
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-1.5*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
         c.drawString(1.5*cm, h-2.0*cm, f"{get_val('ผู้จำหน่าย-ที่อยู่')}")
@@ -135,9 +134,11 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-        # --- 4. เนื้อหาข้อมูล (Section 1-2) ---
-        c.setFont(FONT_NAME, 11)
+        # --- 1. ข้อมูลคู่ค้า (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
+        
+        c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
         c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
@@ -153,7 +154,11 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
 
+        # --- 2. ข้อมูลการขนส่ง (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
+        
+        c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
         c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
@@ -174,8 +179,10 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
 
-        # --- 5. ตารางรายการสินค้า ---
+        # --- 3. รายละเอียดน้ำมัน (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+        
         header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
         data_rows = []
         total_qty = 0.0
@@ -204,18 +211,20 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
 
-        # --- 6. ส่วนการยืนยันและลายเซ็น ---
-        c.setFont(FONT_NAME, 11)
+        # --- 4. การยืนยัน (ปรับหัวข้อใหญ่ขึ้นเป็น 14 และลายเซ็นขนาด 12) ---
+        c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-21.5*cm, "4. การยืนยันและรับสินค้า")
-        c.setFont(FONT_NAME, 10)
-        c.drawString(1.5*cm, h-22.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
+        
+        c.setFont(FONT_NAME, 11)
+        c.drawString(1.5*cm, h-22.3*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
         sig_y = (h - 25.5*cm)
-        label_y = sig_y - 0.5*cm
-        title_y = label_y - 0.6*cm
-        date_y = title_y - 0.6*cm
+        label_y = sig_y - 0.7*cm
+        title_y = label_y - 0.7*cm
+        date_y = title_y - 0.7*cm
         
-        c.setFont(FONT_NAME, 10)
+        c.setFont(FONT_NAME, 12) # ขนาดลายเซ็น
+        
         c.drawCentredString(4.5*cm, sig_y, "..................................")
         c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
         c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
@@ -232,8 +241,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
 
         c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
-        
-        # ตัดขึ้นหน้าใหม่สำหรับแผ่นถัดไป
         c.showPage()
         
     c.save()
