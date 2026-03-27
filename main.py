@@ -151,12 +151,10 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-11.9*cm, 20*cm, h-11.9*cm)
 
-        # --- 2. ข้อมูลการขนส่ง (ปรับลำดับหัวข้อ 2.1 และ 2.2 ตามสั่ง) ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-12.4*cm, "  ข้อมูลการขนส่ง")
         c.setFont(FONT_NAME, 11)
         
-        # 2.1 ผู้ดำเนินการขนส่ง
         c.drawString(1.5*cm, h-13.0*cm, f"ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
         c.drawString(1.5*cm, h-13.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-14.0*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
@@ -164,7 +162,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawString(1.5*cm, h-15.0*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
         c.drawString(1.5*cm, h-15.5*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
         
-        # 2.2 พนักงานขับรถ
         x_col2 = 11*cm + (1.5 * inch)
         c.drawString(x_col2, h-13.0*cm, f"พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
         c.drawString(x_col2, h-13.5*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
@@ -178,7 +175,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-17.5*cm, 20*cm, h-17.5*cm)
 
-        # --- 3. รายละเอียดน้ำมัน ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-18.0*cm, "  รายละเอียดน้ำมันเชื้อเพลิง")
         
@@ -207,14 +203,29 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-23.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
+        # --- ส่วนที่แก้ไข: เพิ่ม "ผู้ออกเอกสาร" และ "วันที่" ใต้ลายเซ็น ---
         sig_y = (h - 26.6*cm)
         c.setFont(FONT_NAME, 12)
+        # บรรทัดลายเซ็น
         c.drawCentredString(4.5*cm, sig_y, "..................................")
         c.drawCentredString(10.5*cm, sig_y, "..................................")
         c.drawCentredString(16.5*cm, sig_y, "..................................")
-        c.drawCentredString(4.5*cm, sig_y-0.7*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
-        c.drawCentredString(10.5*cm, sig_y-0.7*cm, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
-        c.drawCentredString(16.5*cm, sig_y-0.7*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
+        
+        # ชื่อคน (ในวงเล็บ)
+        c.drawCentredString(4.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
+        c.drawCentredString(10.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-พนักงานขับรถ')} )")
+        c.drawCentredString(16.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
+        
+        # ข้อความ "ผู้ออกเอกสาร / พนักงานขับรถ / ผู้รับสินค้า" และ "วันที่"
+        c.setFont(FONT_NAME, 11)
+        c.drawCentredString(4.5*cm, sig_y-1.2*cm, "ผู้ออกเอกสาร")
+        c.drawCentredString(4.5*cm, sig_y-1.7*cm, "วันที่ : ..................................")
+        
+        c.drawCentredString(10.5*cm, sig_y-1.2*cm, "พนักงานขับรถ")
+        c.drawCentredString(10.5*cm, sig_y-1.7*cm, "วันที่ : ..................................")
+        
+        c.drawCentredString(16.5*cm, sig_y-1.2*cm, "ผู้รับสินค้า")
+        c.drawCentredString(16.5*cm, sig_y-1.7*cm, "วันที่ : ..................................")
 
         c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
         c.showPage()
