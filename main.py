@@ -82,19 +82,31 @@ def reset_form_action():
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR =================
+# ================= 3. PDF GENERATOR (WITH WATERMARK) =================
 def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    page_labels = ["แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)", "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง", "แผ่นที่ 3 - สำเนา - คลังน้ำมัน (ต้นทาง)", "แผ่นที่ 4 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง"]
+    page_labels = [
+        "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)", 
+        "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง", 
+        "แผ่นที่ 3 - สำเนา - คลังน้ำมัน (ต้นทาง)", 
+        "แผ่นที่ 4 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง"
+    ]
 
     def get_val(key, default=""):
         if data_dict: return str(data_dict.get(key, default))
         return st.session_state.get(f"in_{key}", default)
 
-    for label in page_labels:
+    for idx, label in enumerate(page_labels):
+        # --- ลายน้ำตัวเลขขนาดใหญ่ (1, 2, 3, 4) ---
+        c.saveState()
+        c.setFont(FONT_NAME, 200)
+        c.setFillAlpha(0.08) # ความจาง 8%
+        c.drawRightString(19*cm, h-10*cm, f"{idx + 1}")
+        c.restoreState()
+
         c.setFont(FONT_NAME, 10)
         c.drawString(1.5*cm, h-0.8*cm, label)
 
@@ -145,6 +157,8 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.setFont(FONT_NAME, 14)
         c.drawString(1.5*cm, h-9.8*cm, "ผู้รับน้ำมัน (ปลายทาง)")
         c.setFont(FONT_NAME, 11)
+        c.drawString(1.5*cm, h-10.4*cm, f"ชื่อผู้รับน้ำมัน : {get_val('ผู้รับสินค้า-ชื่อ')}")
+        c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
         c.drawString(1.5*cm, h-10.4*cm, f"ชื่อผู้รับน้ำมัน : {get_val('ผู้รับสินค้า-ชื่อ')}")
         c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
         c.drawString(1.5*cm, h-11.4*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
@@ -203,20 +217,16 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-23.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
-        # --- ส่วนที่แก้ไข: เพิ่ม "ผู้ออกเอกสาร" และ "วันที่" ใต้ลายเซ็น ---
         sig_y = (h - 26.6*cm)
         c.setFont(FONT_NAME, 12)
-        # บรรทัดลายเซ็น
         c.drawCentredString(4.5*cm, sig_y, "..................................")
         c.drawCentredString(10.5*cm, sig_y, "..................................")
         c.drawCentredString(16.5*cm, sig_y, "..................................")
         
-        # ชื่อคน (ในวงเล็บ)
         c.drawCentredString(4.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
         c.drawCentredString(10.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-พนักงานขับรถ')} )")
         c.drawCentredString(16.5*cm, sig_y-0.6*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
         
-        # ข้อความ "ผู้ออกเอกสาร / พนักงานขับรถ / ผู้รับสินค้า" และ "วันที่"
         c.setFont(FONT_NAME, 11)
         c.drawCentredString(4.5*cm, sig_y-1.2*cm, "ผู้ออกเอกสาร")
         c.drawCentredString(4.5*cm, sig_y-1.7*cm, "วันที่ : ..................................")
