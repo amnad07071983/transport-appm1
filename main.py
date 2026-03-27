@@ -120,7 +120,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         except: pass
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.5*cm, h-1.5*cm, "ผู้จำหน่าย")
+        c.drawString(1.5*cm, h-1.5*cm, "1.ผู้จำหน่าย")
         
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-2.1*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
@@ -140,14 +140,14 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-4.0*cm, 20*cm, h-4.0*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.7*cm, "  คลังรับน้ำมัน (ต้นทาง)")
+        c.drawString(1.2*cm, h-4.7*cm, "  2.คลังรับน้ำมัน (ต้นทาง)")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-5.3*cm, f"ชื่อคลัง : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-5.8*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
         c.drawString(1.5*cm, h-6.3*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.5*cm, h-7.0*cm, "ตั๋วขนย้ายน้ำมัน")
+        c.drawString(1.5*cm, h-7.0*cm, "3.ตั๋วขนย้ายน้ำมัน")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-7.6*cm, f"ชื่อเจ้าของตั๋ว : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-8.1*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
@@ -155,7 +155,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawString(1.5*cm, h-9.1*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
         
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.5*cm, h-9.8*cm, "ผู้รับน้ำมัน (ปลายทาง)")
+        c.drawString(1.5*cm, h-9.8*cm, "4.ผู้รับน้ำมัน (ปลายทาง)")
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-10.4*cm, f"ชื่อผู้รับน้ำมัน : {get_val('ผู้รับสินค้า-ชื่อ')}")
         c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
@@ -164,7 +164,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-11.9*cm, 20*cm, h-11.9*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-12.4*cm, "  ข้อมูลการขนส่ง")
+        c.drawString(1.2*cm, h-12.4*cm, "  5.ข้อมูลการขนส่ง")
         c.setFont(FONT_NAME, 11)
         
         c.drawString(1.5*cm, h-13.0*cm, f"ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
@@ -188,7 +188,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.line(1*cm, h-17.5*cm, 20*cm, h-17.5*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-18.0*cm, "  รายละเอียดน้ำมันเชื้อเพลิง")
+        c.drawString(1.2*cm, h-18.0*cm, "  6.รายละเอียดน้ำมันเชื้อเพลิง")
         
         header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
         data_rows = []
