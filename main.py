@@ -147,10 +147,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawString(1.5*cm, h-5.8*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
         c.drawString(1.5*cm, h-6.3*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
 
-        # --- 1. ตั๋วน้ำมัน ---
-        c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.7*cm, "ตั๋วน้ำมัน ")
-        
         c.drawString(1.5*cm, h-7.0*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-7.5*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
         c.drawString(1.5*cm, h-8.0*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
