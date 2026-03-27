@@ -36,20 +36,22 @@ def init_sheet():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     return gspread.authorize(creds).open_by_key(SHEET_ID)
 
-@st.cache_data(ttl=5)
-def get_data_cached():
+# ดึงข้อมูลพร้อมดัก Error
+try:
     client = init_sheet()
-    try:
-        inv = client.worksheet(INV_SHEET).get_all_records()
-        items = client.worksheet(ITEM_SHEET).get_all_records()
+    ws_inv = client.worksheet(INV_SHEET)
+    ws_item = client.worksheet(ITEM_SHEET)
+    
+    @st.cache_data(ttl=5)
+    def get_data_cached():
+        inv = ws_inv.get_all_records()
+        items = ws_item.get_all_records()
         return pd.DataFrame(inv), pd.DataFrame(items)
-    except:
-        return pd.DataFrame(), pd.DataFrame()
-
-client = init_sheet()
-inv_df, item_df = get_data_cached()
-ws_inv = client.worksheet(INV_SHEET)
-ws_item = client.worksheet(ITEM_SHEET)
+    
+    inv_df, item_df = get_data_cached()
+except Exception as e:
+    st.error(f"❌ Connection Error: {e}")
+    st.stop()
 
 transport_fields = [
     "ผู้รับสินค้า-ชื่อ", "ผู้รับสินค้า-ที่อยู่", "ผู้รับสินค้า-เลขผู้เสียภาษี", "ผู้รับสินค้า-เบอร์โทร",
@@ -87,35 +89,25 @@ def generate_pdf_file(inv_no, items, data_dict=None):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    page_labels = [
-        "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)",
-        "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง",
-        "แผ่นที่ 3 - สำเนา - คลังน้ำมัน (ต้นทาง)",
-        "แผ่นที่ 4 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง"
-    ]
+    page_labels = ["แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)", "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง", "แผ่นที่ 3 - สำเนา - คลังน้ำมัน (ต้นทาง)", "แผ่นที่ 4 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง"]
 
     def get_val(key, default=""):
         if data_dict: return str(data_dict.get(key, default))
         return st.session_state.get(f"in_{key}", default)
 
     for label in page_labels:
-        # หัวกระดาษระบุแผ่น
         c.setFont(FONT_NAME, 10)
         c.drawString(1.5*cm, h-0.8*cm, label)
 
-        # ลายน้ำ
         try:
             if os.path.exists('p1.png'):
                 c.saveState()
                 c.setFillAlpha(0.2)
                 img_size = 10*cm
-                x_pos = (w - img_size) / 2
-                y_pos = ((h - img_size) / 2) - (1.5 * inch)
-                c.drawImage('p1.png', x_pos, y_pos, width=img_size, height=img_size, mask='auto')
+                c.drawImage('p1.png', (w-img_size)/2, ((h-img_size)/2)-(1.5*inch), width=img_size, height=img_size, mask='auto')
                 c.restoreState()
         except: pass
 
-        # ข้อมูลผู้จำหน่าย
         c.setFont(FONT_NAME, 14)
         c.drawString(1.5*cm, h-1.5*cm, "ผู้จำหน่าย")
         
@@ -125,10 +117,8 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawString(1.5*cm, h-3.1*cm, f"โทร.{get_val('ผู้จำหน่าย-เบอร์โทร')}")
         c.drawString(1.5*cm, h-3.6*cm, f"เลขประจำตัวผู้เสียภาษี {get_val('ผู้จำหน่าย-เลขผู้เสียภาษี')}")
 
-        # ฝั่งขวา: ชื่อเอกสาร และ อธิบายเพิ่ม
         c.setFont(FONT_NAME, 18)
         c.drawRightString(19.5*cm, h-1.7*cm, f"{get_val('ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
-        
         c.setFont(FONT_NAME, 12)
         c.drawRightString(19.5*cm, h-2.2*cm, f"{get_val('ผู้จำหน่าย-อธิบายเพิ่ม')}")
         
@@ -138,10 +128,8 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-4.0*cm, 20*cm, h-4.0*cm)
 
-        # --- 1. คลังรับน้ำมัน (ต้นทาง) ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-4.7*cm, "คลังรับน้ำมัน (ต้นทาง)")
-        
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-5.3*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-5.8*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
@@ -149,46 +137,33 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.setFont(FONT_NAME, 14)
         c.drawString(1.5*cm, h-7.0*cm, "ตั๋วน้ำมัน")
-        
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-7.6*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
         c.drawString(1.5*cm, h-8.1*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
         c.drawString(1.5*cm, h-8.6*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-9.1*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
         
-        # --- ส่วนที่แก้ไข: เพิ่มคำว่า "ปลายทาง" ต่อท้ายหัวข้อ 1.3 ---
         c.drawString(1.5*cm, h-9.8*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : ปลายทาง {get_val('ผู้รับสินค้า-ชื่อ')}")
         c.drawString(1.5*cm, h-10.3*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
         c.drawString(1.5*cm, h-10.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
 
         c.line(1*cm, h-11.3*cm, 20*cm, h-11.3*cm)
 
-        # --- 2. ข้อมูลการขนส่ง ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-11.8*cm, "ข้อมูลการขนส่ง")
-        
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-12.4*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
         c.drawString(1.5*cm, h-12.9*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-13.4*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
-        c.drawString(1.5*cm, h-13.9*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
-        c.drawString(1.5*cm, h-14.4*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
-        c.drawString(1.5*cm, h-14.9*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
         
         x_offset_2_2 = 11*cm + (1.5 * inch)
         c.drawString(x_offset_2_2, h-12.4*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
         c.drawString(x_offset_2_2, h-12.9*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
-        c.drawString(x_offset_2_2, h-13.4*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
-        c.drawString(x_offset_2_2, h-13.9*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
-        c.drawString(x_offset_2_2, h-14.4*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
-        c.drawString(x_offset_2_2, h-14.9*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
-        c.drawString(x_offset_2_2, h-15.4*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
-        c.drawString(x_offset_2_2, h-15.9*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
-        c.drawString(x_offset_2_2, h-16.4*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
+        c.drawString(x_offset_2_2, h-13.4*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
+        c.drawString(x_offset_2_2, h-13.9*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
 
         c.line(1*cm, h-16.9*cm, 20*cm, h-16.9*cm)
 
-        # --- 3. รายละเอียดน้ำมัน ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-17.4*cm, "รายละเอียดน้ำมันเชื้อเพลิง")
         
@@ -197,9 +172,9 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         total_qty = 0.0
         for i, it in enumerate(items):
             try:
-                qty_val = float(str(it.get('qty', '0')).replace(',', ''))
-                total_qty += qty_val
-                f_qty = "{:,.0f}".format(qty_val)
+                qv = float(str(it.get('qty', '0')).replace(',', ''))
+                total_qty += qv
+                f_qty = "{:,.0f}".format(qv)
             except: f_qty = it.get('qty', '')
             data_rows.append([i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), f_qty])
         
@@ -207,51 +182,27 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         data_rows.append(["", "", "", "รวมทั้งสิ้น", "", "{:,.0f}".format(total_qty)])
 
         t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
-        t.setStyle(TableStyle([
-            ('FONT', (0,0), (-1,-1), FONT_NAME, 10),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
-            ('SPAN', (3, -1), (4, -1)),
-            ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
-        ]))
-        t.wrapOn(c, 1*cm, h-21.6*cm)
-        t.drawOn(c, 1*cm, h-21.6*cm)
+        t.setStyle(TableStyle([('FONT', (0,0), (-1,-1), FONT_NAME, 10),('GRID', (0,0), (-1,-1), 0.5, colors.black),('ALIGN', (0,0), (-1,-1), 'CENTER'), ('ALIGN', (3, -1), (3, -1), 'RIGHT'), ('SPAN', (3, -1), (4, -1))]))
+        t.wrapOn(c, 1*cm, h-21.6*cm); t.drawOn(c, 1*cm, h-21.6*cm)
 
         c.line(1*cm, h-22.1*cm, 20*cm, h-22.1*cm)
 
-        # --- 4. การยืนยัน ---
         c.setFont(FONT_NAME, 14)
         c.drawString(1.2*cm, h-22.6*cm, "การยืนยันและรับสินค้า")
-        
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-23.4*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
         sig_y = (h - 26.6*cm)
-        label_y = sig_y - 0.7*cm
-        title_y = label_y - 0.7*cm
-        date_y = title_y - 0.7*cm
-        
         c.setFont(FONT_NAME, 12)
-        
         c.drawCentredString(4.5*cm, sig_y, "..................................")
-        c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
-        c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
-        c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
-
         c.drawCentredString(10.5*cm, sig_y, "..................................")
-        c.drawCentredString(10.5*cm, label_y, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
-        c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
-        c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
-
         c.drawCentredString(16.5*cm, sig_y, "..................................")
-        c.drawCentredString(16.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
-        c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
-        c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
+        c.drawCentredString(4.5*cm, sig_y-0.7*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
+        c.drawCentredString(10.5*cm, sig_y-0.7*cm, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
+        c.drawCentredString(16.5*cm, sig_y-0.7*cm, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
 
         c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
         c.showPage()
-        
     c.save()
     buf.seek(0)
     return buf
@@ -266,10 +217,8 @@ with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิล�
         if selected:
             sel_no = selected.split(" | ")[0]
             col_a, col_b, col_c = st.columns(3)
-            
             row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
             it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
-
             if col_a.button("📝 โหลดมาแก้ไข"):
                 st.session_state.editing_no = sel_no
                 st.session_state.form_date = str(row_data.get('date', st.session_state.form_date))
@@ -277,14 +226,12 @@ with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิล�
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.session_state.pdf_buffer = generate_pdf_file(sel_no, st.session_state.invoice_items)
                 st.rerun()
-
             if col_b.button("🔄 โหลดมาสร้างซ้ำ"):
                 st.session_state.editing_no = None
                 for f in transport_fields: st.session_state[f"in_{f}"] = str(row_data.get(f, ""))
                 st.session_state.invoice_items = [{"product": i.get('product',''), "unit": i.get('unit',''), "qty": i.get('qty',''), "tank": str(i.get('tank','')), "seal": str(i.get('seal',''))} for i in it_rows]
                 st.session_state.pdf_buffer = None
                 st.rerun()
-
             quick_pdf = generate_pdf_file(sel_no, it_rows, data_dict=row_data)
             col_c.download_button("📥 ดาวน์โหลด PDF (ทันที)", data=quick_pdf, file_name=f"Invoice_{sel_no}.pdf", mime="application/pdf")
 
@@ -309,8 +256,7 @@ with tabs[2]:
         df_items = pd.DataFrame(st.session_state.invoice_items)
         edited_df = st.data_editor(df_items, num_rows="dynamic", use_container_width=True, key="logistics_editor")
         if not edited_df.equals(df_items): st.session_state.invoice_items = edited_df.to_dict('records')
-        if st.button("🗑️ ล้างรายการสินค้าทั้งหมด"): 
-            st.session_state.invoice_items = []; st.rerun()
+        if st.button("🗑️ ล้างรายการสินค้าทั้งหมด"): st.session_state.invoice_items = []; st.rerun()
 
 with tabs[3]:
     st.session_state.form_date = st.text_input("วันที่", value=st.session_state.form_date)
@@ -326,23 +272,19 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
         return f"{prefix}-{int(last_val)+1:04d}"
     
     final_no = st.session_state.editing_no if st.session_state.editing_no else get_next_no()
-    
     if st.session_state.editing_no:
         try:
             for ws in [ws_inv, ws_item]:
                 found = ws.findall(final_no)
                 for cell in reversed(found): ws.delete_rows(cell.row)
         except: pass
-        
     ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
     for it in st.session_state.invoice_items:
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
-        
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
     st.session_state.editing_no = final_no
     st.cache_data.clear(); st.rerun()
 
 if st.session_state.pdf_buffer:
-    fn = f"Invoice_{st.session_state.editing_no}.pdf" if st.session_state.editing_no else "Invoice_New.pdf"
-    st.download_button("📥 ดาวน์โหลดเอกสาร PDF (จากฟอร์มปัจจุบัน)", data=st.session_state.pdf_buffer, file_name=fn, mime="application/pdf", use_container_width=True)
-    if st.button("🆕 เริ่มบิลใหม่ (Reset Form)"): reset_form_action(); st.rerun()
+    st.download_button("📥 ดาวน์โหลด PDF", data=st.session_state.pdf_buffer, file_name=f"Invoice_{st.session_state.editing_no}.pdf", mime="application/pdf", use_container_width=True)
+    if st.button("🆕 เริ่มบิลใหม่"): reset_form_action(); st.rerun()
