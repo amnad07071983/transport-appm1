@@ -140,7 +140,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 1. คลังรับน้ำมัน (ต้นทาง) ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.7*cm, "1. คลังรับน้ำมัน (ต้นทาง)")
+        c.drawString(1.2*cm, h-4.7*cm, "คลังรับน้ำมัน (ต้นทาง)")
         
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-5.3*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
@@ -160,7 +160,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 2. ข้อมูลการขนส่ง ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-11.2*cm, "2. ข้อมูลการขนส่ง")
+        c.drawString(1.2*cm, h-11.2*cm, "ข้อมูลการขนส่ง")
         
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-11.8*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
@@ -185,7 +185,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 3. รายละเอียดน้ำมัน ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-16.8*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+        c.drawString(1.2*cm, h-16.8*cm, "รายละเอียดน้ำมันเชื้อเพลิง")
         
         header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
         data_rows = []
@@ -217,7 +217,7 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         # --- 4. การยืนยัน ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-22.0*cm, "4. การยืนยันและรับสินค้า")
+        c.drawString(1.2*cm, h-22.0*cm, "การยืนยันและรับสินค้า")
         
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-22.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
