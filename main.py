@@ -82,7 +82,7 @@ def reset_form_action():
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR (WITH WATERMARK) =================
+# ================= 3. PDF GENERATOR =================
 def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -100,10 +100,10 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         return st.session_state.get(f"in_{key}", default)
 
     for idx, label in enumerate(page_labels):
-        # --- ลายน้ำตัวเลขขนาดใหญ่ (1, 2, 3, 4) ---
+        # --- ลายน้ำตัวเลขจางพิเศษ (0.03) ---
         c.saveState()
         c.setFont(FONT_NAME, 200)
-        c.setFillAlpha(0.08) # ความจาง 8%
+        c.setFillAlpha(0.03) 
         c.drawRightString(19*cm, h-10*cm, f"{idx + 1}")
         c.restoreState()
 
@@ -157,8 +157,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.setFont(FONT_NAME, 14)
         c.drawString(1.5*cm, h-9.8*cm, "ผู้รับน้ำมัน (ปลายทาง)")
         c.setFont(FONT_NAME, 11)
-        c.drawString(1.5*cm, h-10.4*cm, f"ชื่อผู้รับน้ำมัน : {get_val('ผู้รับสินค้า-ชื่อ')}")
-        c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
         c.drawString(1.5*cm, h-10.4*cm, f"ชื่อผู้รับน้ำมัน : {get_val('ผู้รับสินค้า-ชื่อ')}")
         c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
         c.drawString(1.5*cm, h-11.4*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
