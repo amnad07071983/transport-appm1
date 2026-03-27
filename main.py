@@ -81,7 +81,7 @@ def reset_form_action():
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR (4 PAGES + LARGE HEADERS & SIGNATURE) =================
+# ================= 3. PDF GENERATOR (UPDATED HEADERS) =================
 def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -115,73 +115,77 @@ def generate_pdf_file(inv_no, items, data_dict=None):
                 c.restoreState()
         except: pass
 
-        # ข้อมูลบริษัทผู้จำหน่าย
+        # ข้อมูลบริษัทผู้จำหน่าย (ฝั่งซ้าย)
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-1.5*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
         c.drawString(1.5*cm, h-2.0*cm, f"{get_val('ผู้จำหน่าย-ที่อยู่')}")
         c.drawString(1.5*cm, h-2.5*cm, f"โทร.{get_val('ผู้จำหน่าย-เบอร์โทร')}")
         c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {get_val('ผู้จำหน่าย-เลขผู้เสียภาษี')}")
 
+        # --- ส่วนที่แก้ไข: ชื่อเอกสาร และ อธิบายเพิ่ม (ฝั่งขวา) ---
         c.setFont(FONT_NAME, 18)
         c.drawRightString(19.5*cm, h-1.7*cm, f"{get_val('ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
         
+        c.setFont(FONT_NAME, 12)
+        c.drawRightString(19.5*cm, h-2.2*cm, f"{get_val('ผู้จำหน่าย-อธิบายเพิ่ม')}")
+        
         c.setFont(FONT_NAME, 10)
-        c.drawRightString(19.5*cm, h-2.2*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
+        c.drawRightString(19.5*cm, h-2.7*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
         
         header_x_right = 13*cm + (1 * inch)
-        c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
-        c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {data_dict.get('date') if data_dict else st.session_state.get('form_date', '')}")
+        c.drawString(header_x_right, h-3.2*cm, f"เลขที่ : {inv_no}")
+        c.drawString(header_x_right, h-3.7*cm, f"วันที่ : {data_dict.get('date') if data_dict else st.session_state.get('form_date', '')}")
 
-        c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
+        c.line(1*cm, h-4.0*cm, 20*cm, h-4.0*cm)
 
-        # --- 1. ข้อมูลคู่ค้า (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        # --- 1. ข้อมูลคู่ค้า ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
+        c.drawString(1.2*cm, h-4.7*cm, "1. ข้อมูลคู่ค้า")
         
         c.setFont(FONT_NAME, 11)
-        c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
-        c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
-        c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-5.3*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
+        c.drawString(1.5*cm, h-5.8*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
+        c.drawString(1.5*cm, h-6.3*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
         
-        c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
-        c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
-        c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
-        c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
+        c.drawString(1.5*cm, h-7.0*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
+        c.drawString(1.5*cm, h-7.5*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
+        c.drawString(1.5*cm, h-8.0*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-8.5*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
         
-        c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
-        c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
-        c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-9.2*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
+        c.drawString(1.5*cm, h-9.7*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
+        c.drawString(1.5*cm, h-10.2*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
 
-        c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
+        c.line(1*cm, h-10.7*cm, 20*cm, h-10.7*cm)
 
-        # --- 2. ข้อมูลการขนส่ง (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        # --- 2. ข้อมูลการขนส่ง ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
+        c.drawString(1.2*cm, h-11.2*cm, "2. ข้อมูลการขนส่ง")
         
         c.setFont(FONT_NAME, 11)
-        c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
-        c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
-        c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
-        c.drawString(1.5*cm, h-12.8*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
-        c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
-        c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
+        c.drawString(1.5*cm, h-11.8*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
+        c.drawString(1.5*cm, h-12.3*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-12.8*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
+        c.drawString(1.5*cm, h-13.3*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
+        c.drawString(1.5*cm, h-13.8*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
+        c.drawString(1.5*cm, h-14.3*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
         
         x_offset_2_2 = 11*cm + (1.5 * inch)
-        c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
-        c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
-        c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
-        c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
-        c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
-        c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
-        c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
-        c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
-        c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
+        c.drawString(x_offset_2_2, h-11.8*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
+        c.drawString(x_offset_2_2, h-12.3*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
+        c.drawString(x_offset_2_2, h-12.8*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
+        c.drawString(x_offset_2_2, h-13.3*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
+        c.drawString(x_offset_2_2, h-13.8*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
+        c.drawString(x_offset_2_2, h-14.3*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
+        c.drawString(x_offset_2_2, h-14.8*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
+        c.drawString(x_offset_2_2, h-15.3*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
+        c.drawString(x_offset_2_2, h-15.8*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
 
-        c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
+        c.line(1*cm, h-16.3*cm, 20*cm, h-16.3*cm)
 
-        # --- 3. รายละเอียดน้ำมัน (ปรับหัวข้อใหญ่ขึ้นเป็น 14) ---
+        # --- 3. รายละเอียดน้ำมัน ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+        c.drawString(1.2*cm, h-16.8*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
         
         header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
         data_rows = []
@@ -206,24 +210,24 @@ def generate_pdf_file(inv_no, items, data_dict=None):
             ('SPAN', (3, -1), (4, -1)),
             ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
         ]))
-        t.wrapOn(c, 1*cm, h-20.5*cm)
-        t.drawOn(c, 1*cm, h-20.5*cm)
+        t.wrapOn(c, 1*cm, h-21.0*cm)
+        t.drawOn(c, 1*cm, h-21.0*cm)
 
-        c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
+        c.line(1*cm, h-21.5*cm, 20*cm, h-21.5*cm)
 
-        # --- 4. การยืนยัน (ปรับหัวข้อใหญ่ขึ้นเป็น 14 และลายเซ็นขนาด 12) ---
+        # --- 4. การยืนยัน ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-21.5*cm, "4. การยืนยันและรับสินค้า")
+        c.drawString(1.2*cm, h-22.0*cm, "4. การยืนยันและรับสินค้า")
         
         c.setFont(FONT_NAME, 11)
-        c.drawString(1.5*cm, h-22.3*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
+        c.drawString(1.5*cm, h-22.8*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
 
-        sig_y = (h - 25.5*cm)
+        sig_y = (h - 26.0*cm)
         label_y = sig_y - 0.7*cm
         title_y = label_y - 0.7*cm
         date_y = title_y - 0.7*cm
         
-        c.setFont(FONT_NAME, 12) # ขนาดลายเซ็น
+        c.setFont(FONT_NAME, 12)
         
         c.drawCentredString(4.5*cm, sig_y, "..................................")
         c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
