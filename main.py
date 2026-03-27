@@ -143,24 +143,28 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         c.drawString(1.5*cm, h-8.6*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
         c.drawString(1.5*cm, h-9.1*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
         
-        c.drawString(1.5*cm, h-9.8*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : ปลายทาง {get_val('ผู้รับสินค้า-ชื่อ')}")
-        c.drawString(1.5*cm, h-10.3*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
-        c.drawString(1.5*cm, h-10.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
+        # --- ส่วนที่แก้ไข: เพิ่มคำว่า "ปลายทาง" ตรงส่วนหัวข้อ 1.3 ---
+        c.setFont(FONT_NAME, 14)
+        c.drawString(1.5*cm, h-9.8*cm, "ปลายทาง")
+        c.setFont(FONT_NAME, 11)
+        c.drawString(1.5*cm, h-10.4*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
+        c.drawString(1.5*cm, h-10.9*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
+        c.drawString(1.5*cm, h-11.4*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
 
-        c.line(1*cm, h-11.3*cm, 20*cm, h-11.3*cm)
+        c.line(1*cm, h-11.9*cm, 20*cm, h-11.9*cm)
 
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-11.8*cm, "ข้อมูลการขนส่ง")
+        c.drawString(1.2*cm, h-12.4*cm, "ข้อมูลการขนส่ง")
         c.setFont(FONT_NAME, 11)
-        c.drawString(1.5*cm, h-12.4*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
-        c.drawString(1.5*cm, h-12.9*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
-        c.drawString(1.5*cm, h-13.4*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
+        c.drawString(1.5*cm, h-13.0*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
+        c.drawString(1.5*cm, h-13.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-14.0*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
         
         x_offset_2_2 = 11*cm + (1.5 * inch)
-        c.drawString(x_offset_2_2, h-12.4*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
-        c.drawString(x_offset_2_2, h-12.9*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
-        c.drawString(x_offset_2_2, h-13.4*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
-        c.drawString(x_offset_2_2, h-13.9*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
+        c.drawString(x_offset_2_2, h-13.0*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
+        c.drawString(x_offset_2_2, h-13.5*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
+        c.drawString(x_offset_2_2, h-14.0*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
+        c.drawString(x_offset_2_2, h-14.5*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
 
         c.line(1*cm, h-16.9*cm, 20*cm, h-16.9*cm)
 
