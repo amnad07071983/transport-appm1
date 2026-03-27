@@ -81,141 +81,163 @@ def reset_form_action():
     st.session_state.form_date = datetime.now().strftime("%d/%m/%Y")
     for f in transport_fields: st.session_state[f"in_{f}"] = ""
 
-# ================= 3. PDF GENERATOR =================
+# ================= 3. PDF GENERATOR (UPDATED TO 4 PAGES) =================
 def generate_pdf_file(inv_no, items, data_dict=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
-    # หากมีการส่งข้อมูลดิบมา (สำหรับปุ่มโหลดด่วน) ให้ใช้ข้อมูลนั้น
+    # รายละเอียดหัวกระดาษแต่ละแผ่น
+    page_labels = [
+        "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)",
+        "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง",
+        "แผ่นที่ 3 - สำเนา - คลังน้ำมัน (ต้นทาง)",
+        "แผ่นที่ 4 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง"
+    ]
+
     def get_val(key, default=""):
         if data_dict: return str(data_dict.get(key, default))
         return st.session_state.get(f"in_{key}", default)
 
-    try:
-        if os.path.exists('p1.png'):
-            c.saveState()
-            c.setFillAlpha(0.3)
-            img_size = 10*cm
-            x_pos = (w - img_size) / 2
-            y_pos = ((h - img_size) / 2) - (1.5 * inch)
-            c.drawImage('p1.png', x_pos, y_pos, width=img_size, height=img_size, mask='auto')
-            c.restoreState()
-    except: pass
+    for label in page_labels:
+        # --- 1. หัวกระดาษระบุสถานะเอกสาร ---
+        c.setFont(FONT_NAME, 10)
+        c.drawString(1.5*cm, h-0.8*cm, label)
 
-    c.setFont(FONT_NAME, 11)
-    c.drawString(1.5*cm, h-1.5*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
-    c.drawString(1.5*cm, h-2.0*cm, f"{get_val('ผู้จำหน่าย-ที่อยู่')}")
-    c.drawString(1.5*cm, h-2.5*cm, f"โทร.{get_val('ผู้จำหน่าย-เบอร์โทร')}")
-    c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {get_val('ผู้จำหน่าย-เลขผู้เสียภาษี')}")
-
-    c.setFont(FONT_NAME, 18)
-    c.drawRightString(19.5*cm, h-1.7*cm, f"{get_val('ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
-    
-    c.setFont(FONT_NAME, 10)
-    c.drawRightString(19.5*cm, h-2.2*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
-    
-    header_x_right = 13*cm + (1 * inch)
-    c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
-    c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {data_dict.get('date') if data_dict else st.session_state.get('form_date', '')}")
-
-    c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
-
-    c.setFont(FONT_NAME, 11)
-    c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
-    c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
-    c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
-    c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
-    
-    c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
-    c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
-    c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
-    c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
-    
-    c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
-    c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
-    c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
-
-    c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
-
-    c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
-    c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
-    c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
-    c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
-    c.drawString(1.5*cm, h-12.8*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
-    c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
-    c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
-    
-    x_offset_2_2 = 11*cm + (1.5 * inch)
-    c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
-    c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
-    c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
-    c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
-    c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
-    c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
-    c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
-    c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
-    c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
-
-    c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
-
-    c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
-    header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
-    data_rows = []
-    total_qty = 0.0
-    for i, it in enumerate(items):
+        # --- 2. ลายน้ำ (ถ้ามี) ---
         try:
-            qty_val = float(str(it.get('qty', '0')).replace(',', ''))
-            total_qty += qty_val
-            f_qty = "{:,.0f}".format(qty_val)
-        except: f_qty = it.get('qty', '')
-        data_rows.append([i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), f_qty])
-    
-    while len(data_rows) < 4: data_rows.append(["","","","","",""])
-    data_rows.append(["", "", "", "รวมทั้งสิ้น", "", "{:,.0f}".format(total_qty)])
+            if os.path.exists('p1.png'):
+                c.saveState()
+                c.setFillAlpha(0.2)
+                img_size = 10*cm
+                x_pos = (w - img_size) / 2
+                y_pos = ((h - img_size) / 2) - (1.5 * inch)
+                c.drawImage('p1.png', x_pos, y_pos, width=img_size, height=img_size, mask='auto')
+                c.restoreState()
+        except: pass
 
-    t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
-    t.setStyle(TableStyle([
-        ('FONT', (0,0), (-1,-1), FONT_NAME, 10),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
-        ('SPAN', (3, -1), (4, -1)),
-        ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
-    ]))
-    t.wrapOn(c, 1*cm, h-20.5*cm)
-    t.drawOn(c, 1*cm, h-20.5*cm)
+        # --- 3. ข้อมูลผู้จำหน่าย ---
+        c.setFont(FONT_NAME, 11)
+        c.drawString(1.5*cm, h-1.5*cm, f"{get_val('ผู้จำหน่าย-ชื่อ')}")
+        c.drawString(1.5*cm, h-2.0*cm, f"{get_val('ผู้จำหน่าย-ที่อยู่')}")
+        c.drawString(1.5*cm, h-2.5*cm, f"โทร.{get_val('ผู้จำหน่าย-เบอร์โทร')}")
+        c.drawString(1.5*cm, h-3.0*cm, f"เลขประจำตัวผู้เสียภาษี {get_val('ผู้จำหน่าย-เลขผู้เสียภาษี')}")
 
-    c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
+        c.setFont(FONT_NAME, 18)
+        c.drawRightString(19.5*cm, h-1.7*cm, f"{get_val('ผู้จำหน่าย-ชื่อเอกสาร', 'ใบกำกับขนส่งน้ำมัน')}")
+        
+        c.setFont(FONT_NAME, 10)
+        c.drawRightString(19.5*cm, h-2.2*cm, "(ตามประกาศกระทรวงพาณิชย์ และกรมธุรกิจพลังงาน)")
+        
+        header_x_right = 13*cm + (1 * inch)
+        c.drawString(header_x_right, h-2.7*cm, f"เลขที่ : {inv_no}")
+        c.drawString(header_x_right, h-3.2*cm, f"วันที่ : {data_dict.get('date') if data_dict else st.session_state.get('form_date', '')}")
 
-    c.setFont(FONT_NAME, 11)
-    c.drawString(1.2*cm, h-21.5*cm, "4. การยืนยันและรับสินค้า")
-    c.setFont(FONT_NAME, 10)
-    c.drawString(1.5*cm, h-22.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
+        c.line(1*cm, h-3.5*cm, 20*cm, h-3.5*cm)
 
-    sig_y = (h - 25.5*cm)
-    label_y = sig_y - 0.5*cm
-    title_y = label_y - 0.6*cm
-    date_y = title_y - 0.6*cm
-    
-    c.setFont(FONT_NAME, 10)
-    c.drawCentredString(4.5*cm, sig_y, "..................................")
-    c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
-    c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
-    c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
+        # --- 4. เนื้อหาข้อมูล (Section 1-2) ---
+        c.setFont(FONT_NAME, 11)
+        c.drawString(1.2*cm, h-4.2*cm, "1. ข้อมูลคู่ค้า")
+        c.drawString(1.5*cm, h-4.8*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
+        c.drawString(1.5*cm, h-5.3*cm, f"ที่อยู่ : {get_val('คลังรับผลิตภัณฑ์-ที่อยู่')}")
+        c.drawString(1.5*cm, h-5.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('คลังรับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
+        
+        c.drawString(1.5*cm, h-6.5*cm, f"1.2 ผู้รับผลิตภัณฑ์ : {get_val('ผู้รับผลิตภัณฑ์-ชื่อ')}")
+        c.drawString(1.5*cm, h-7.0*cm, f"ที่อยู่ : {get_val('ผู้รับผลิตภัณฑ์-ที่อยู่')}")
+        c.drawString(1.5*cm, h-7.5*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับผลิตภัณฑ์-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-8.0*cm, f"ตั๋วขนย้ายเลขที่ : {get_val('ผู้รับผลิตภัณฑ์-หมายเลขตั๋ว')}")
+        
+        c.drawString(1.5*cm, h-8.7*cm, f"1.3 ผู้รับสินค้า (ปลายทาง) : {get_val('ผู้รับสินค้า-ชื่อ')}")
+        c.drawString(1.5*cm, h-9.2*cm, f"ที่อยู่ : {get_val('ผู้รับสินค้า-ที่อยู่')}")
+        c.drawString(1.5*cm, h-9.7*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้รับสินค้า-เลขผู้เสียภาษี')}")
 
-    c.drawCentredString(10.5*cm, sig_y, "..................................")
-    c.drawCentredString(10.5*cm, label_y, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
-    c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
-    c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
+        c.line(1*cm, h-10.2*cm, 20*cm, h-10.2*cm)
 
-    c.drawCentredString(16.5*cm, sig_y, "..................................")
-    c.drawCentredString(16.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
-    c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
-    c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
+        c.drawString(1.2*cm, h-10.7*cm, "2. ข้อมูลการขนส่ง")
+        c.drawString(1.5*cm, h-11.3*cm, f"2.1 ผู้ดำเนินการขนส่ง : {get_val('ผู้ดำเนินการขนส่ง-ชื่อ')}")
+        c.drawString(1.5*cm, h-11.8*cm, f"เลขประจำตัวผู้เสียภาษี : {get_val('ผู้ดำเนินการขนส่ง-เลขผู้เสียภาษี')}")
+        c.drawString(1.5*cm, h-12.3*cm, f"ที่อยู่ : {get_val('ผู้ดำเนินการขนส่ง-ที่อยู่')}")
+        c.drawString(1.5*cm, h-12.8*cm, f"เบอร์โทร : {get_val('ผู้ดำเนินการขนส่ง-เบอร์โทร')}")
+        c.drawString(1.5*cm, h-13.3*cm, f"ประเภทผู้รับจ้าง : {get_val('ผู้ดำเนินการขนส่ง-ประเภทผู้รับจ้าง')}")
+        c.drawString(1.5*cm, h-13.8*cm, f"ใบอนุญาต : {get_val('ผู้ดำเนินการขนส่ง-ใบอนุญาต')}")
+        
+        x_offset_2_2 = 11*cm + (1.5 * inch)
+        c.drawString(x_offset_2_2, h-11.3*cm, f"2.2 พนักงานขับรถ : {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')}")
+        c.drawString(x_offset_2_2, h-11.8*cm, f"เลขใบขับขี่ : {get_val('ข้อมูลพนักงานขับรถ-เลขใบขับขี่')}")
+        c.drawString(x_offset_2_2, h-12.3*cm, f"เบอร์โทร : {get_val('ข้อมูลพนักงานขับรถ-เบอร์โทร')}")
+        c.drawString(x_offset_2_2, h-12.8*cm, f"ทะเบียนรถ : {get_val('ข้อมูลพนักงานขับรถ-ทะเบียนรถ')}")
+        c.drawString(x_offset_2_2, h-13.3*cm, f"วิธีขนส่ง : {get_val('ข้อมูลพนักงานขับรถ-วิธีขนส่ง')}")
+        c.drawString(x_offset_2_2, h-13.8*cm, f"วันที่ออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-วันออกเดินทาง')}")
+        c.drawString(x_offset_2_2, h-14.3*cm, f"เวลาออกเดินทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาออกเดินทาง')}")
+        c.drawString(x_offset_2_2, h-14.8*cm, f"วันที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-วันที่ถึงปลายทาง')}")
+        c.drawString(x_offset_2_2, h-15.3*cm, f"เวลาที่ถึงปลายทาง : {get_val('ข้อมูลพนักงานขับรถ-เวลาที่ถึงปลายทาง')}")
 
-    c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
-    c.showPage(); c.save(); buf.seek(0)
+        c.line(1*cm, h-15.8*cm, 20*cm, h-15.8*cm)
+
+        # --- 5. ตารางรายการสินค้า ---
+        c.drawString(1.2*cm, h-16.3*cm, "3. รายละเอียดน้ำมันเชื้อเพลิง")
+        header = [["ลำดับ", "ช่องถัง", "ซีล", "รายการน้ำมัน", "หน่วย", "จำนวน"]]
+        data_rows = []
+        total_qty = 0.0
+        for i, it in enumerate(items):
+            try:
+                qty_val = float(str(it.get('qty', '0')).replace(',', ''))
+                total_qty += qty_val
+                f_qty = "{:,.0f}".format(qty_val)
+            except: f_qty = it.get('qty', '')
+            data_rows.append([i+1, it.get('tank',''), it.get('seal',''), it.get('product',''), it.get('unit',''), f_qty])
+        
+        while len(data_rows) < 4: data_rows.append(["","","","","",""])
+        data_rows.append(["", "", "", "รวมทั้งสิ้น", "", "{:,.0f}".format(total_qty)])
+
+        t = Table(header + data_rows, colWidths=[1.2*cm, 2.5*cm, 3.5*cm, 6.8*cm, 2*cm, 3*cm])
+        t.setStyle(TableStyle([
+            ('FONT', (0,0), (-1,-1), FONT_NAME, 10),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('ALIGN', (3, -1), (3, -1), 'RIGHT'),
+            ('SPAN', (3, -1), (4, -1)),
+            ('FONTNAME', (0, -1), (-1, -1), FONT_NAME),
+        ]))
+        t.wrapOn(c, 1*cm, h-20.5*cm)
+        t.drawOn(c, 1*cm, h-20.5*cm)
+
+        c.line(1*cm, h-21.0*cm, 20*cm, h-21.0*cm)
+
+        # --- 6. ส่วนการยืนยันและลายเซ็น ---
+        c.setFont(FONT_NAME, 11)
+        c.drawString(1.2*cm, h-21.5*cm, "4. การยืนยันและรับสินค้า")
+        c.setFont(FONT_NAME, 10)
+        c.drawString(1.5*cm, h-22.1*cm, "ข้าพเจ้าได้รับสินค้าตามรายการข้างต้นในสภาพเรียบร้อย ถูกต้องตามจำนวนและหมายเลขซีลที่ระบุไว้")
+
+        sig_y = (h - 25.5*cm)
+        label_y = sig_y - 0.5*cm
+        title_y = label_y - 0.6*cm
+        date_y = title_y - 0.6*cm
+        
+        c.setFont(FONT_NAME, 10)
+        c.drawCentredString(4.5*cm, sig_y, "..................................")
+        c.drawCentredString(4.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้ออกเอกสาร')} )")
+        c.drawCentredString(4.5*cm, title_y, "ผู้ออกเอกสาร")
+        c.drawCentredString(4.5*cm, date_y, "วันที่ : ............................")
+
+        c.drawCentredString(10.5*cm, sig_y, "..................................")
+        c.drawCentredString(10.5*cm, label_y, f"( {get_val('ข้อมูลพนักงานขับรถ-ชื่อ')} )")
+        c.drawCentredString(10.5*cm, title_y, "พนักงานขับรถ")
+        c.drawCentredString(10.5*cm, date_y, "วันที่ : ............................")
+
+        c.drawCentredString(16.5*cm, sig_y, "..................................")
+        c.drawCentredString(16.5*cm, label_y, f"( {get_val('การยืนยันและรับสินค้า-ผู้รับสินค้า')} )")
+        c.drawCentredString(16.5*cm, title_y, "ผู้รับสินค้า")
+        c.drawCentredString(16.5*cm, date_y, "วันที่ : ............................")
+
+        c.rect(1*cm, 1*cm, 19*cm, h-2*cm)
+        
+        # ตัดขึ้นหน้าใหม่สำหรับแผ่นถัดไป
+        c.showPage()
+        
+    c.save()
+    buf.seek(0)
     return buf
 
 # ================= 4. MAIN UI =================
@@ -229,7 +251,6 @@ with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิล�
             sel_no = selected.split(" | ")[0]
             col_a, col_b, col_c = st.columns(3)
             
-            # ข้อมูลดิบสำหรับสร้าง PDF ทันที
             row_data = inv_df[inv_df[INV_KEY] == sel_no].iloc[0].to_dict()
             it_rows = item_df[item_df["invoice_no"] == sel_no].to_dict('records')
 
@@ -248,7 +269,6 @@ with st.expander("🔍 ค้นหา/แก้ไข/พิมพ์บิล�
                 st.session_state.pdf_buffer = None
                 st.rerun()
 
-            # ปุ่มดาวน์โหลด PDF ทันที
             quick_pdf = generate_pdf_file(sel_no, it_rows, data_dict=row_data)
             col_c.download_button("📥 ดาวน์โหลด PDF (ทันที)", data=quick_pdf, file_name=f"Invoice_{sel_no}.pdf", mime="application/pdf")
 
@@ -288,16 +308,20 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
         if curr.empty: return f"{prefix}-0001"
         last_val = str(curr[INV_KEY].iloc[-1]).split('-')[-1]
         return f"{prefix}-{int(last_val)+1:04d}"
+    
     final_no = st.session_state.editing_no if st.session_state.editing_no else get_next_no()
+    
     if st.session_state.editing_no:
         try:
             for ws in [ws_inv, ws_item]:
                 found = ws.findall(final_no)
                 for cell in reversed(found): ws.delete_rows(cell.row)
         except: pass
+        
     ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
     for it in st.session_state.invoice_items:
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
+        
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
     st.session_state.editing_no = final_no
     st.cache_data.clear(); st.rerun()
