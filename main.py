@@ -138,9 +138,9 @@ def generate_pdf_file(inv_no, items, data_dict=None):
 
         c.line(1*cm, h-4.0*cm, 20*cm, h-4.0*cm)
 
-        # --- 1. ข้อมูลคู่ค้า ---
+        # --- 1. คลังรับน้ำมัน (ต้นทาง) ---
         c.setFont(FONT_NAME, 14)
-        c.drawString(1.2*cm, h-4.7*cm, "1. ข้อมูลคู่ค้า")
+        c.drawString(1.2*cm, h-4.7*cm, "1. คลังรับน้ำมัน (ต้นทาง)")
         
         c.setFont(FONT_NAME, 11)
         c.drawString(1.5*cm, h-5.3*cm, f"1.1 คลังรับผลิตภัณฑ์ : {get_val('คลังรับผลิตภัณฑ์-ชื่อ')}")
