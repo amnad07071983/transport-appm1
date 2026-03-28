@@ -100,7 +100,6 @@ def generate_pdf_file(inv_no, items, data_dict=None):
         return st.session_state.get(f"in_{key}", default)
 
     for idx, label in enumerate(page_labels):
-        # --- ลายน้ำตัวเลขจางพิเศษ (0.03) ---
         c.saveState()
         c.setFont(FONT_NAME, 200)
         c.setFillAlpha(0.05) 
@@ -302,19 +301,36 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
         if inv_df.empty: return f"{prefix}-0001"
         curr = inv_df[inv_df[INV_KEY].astype(str).str.startswith(prefix)]
         if curr.empty: return f"{prefix}-0001"
-        last_val = str(curr[INV_KEY].iloc[-1]).split('-')[-1]
-        return f"{prefix}-{int(last_val)+1:04d}"
+        
+        # แก้ไข: หาค่าสูงสุด (Max) ของเลขท้าย แทนการเอาบรรทัดสุดท้าย
+        suffixes = curr[INV_KEY].apply(lambda x: int(str(x).split('-')[-1]) if '-' in str(x) else 0)
+        max_val = suffixes.max()
+        return f"{prefix}-{int(max_val)+1:04d}"
     
     final_no = st.session_state.editing_no if st.session_state.editing_no else get_next_no()
+    new_row_data = [final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields]
+
     if st.session_state.editing_no:
         try:
-            for ws in [ws_inv, ws_item]:
-                found = ws.findall(final_no)
-                for cell in reversed(found): ws.delete_rows(cell.row)
-        except: pass
-    ws_inv.append_row([final_no, st.session_state.form_date] + [st.session_state[f"in_{f}"] for f in transport_fields])
+            # แก้ไข: อัปเดตแถวเดิม ไม่ลบ
+            cell = ws_inv.find(final_no)
+            if cell:
+                ws_inv.update(f"A{cell.row}", [new_row_data])
+            
+            # ลบรายการสินค้าเก่าเพื่อเขียนใหม่ (เพราะจำนวนรายการสินค้าอาจไม่เท่าเดิม)
+            found_items = ws_item.findall(final_no)
+            for cell_it in reversed(found_items):
+                ws_item.delete_rows(cell_it.row)
+        except Exception as e:
+            st.error(f"Error during update: {e}")
+    else:
+        # บันทึกแถวใหม่
+        ws_inv.append_row(new_row_data)
+
+    # บันทึกรายการสินค้า
     for it in st.session_state.invoice_items:
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
+    
     st.session_state.pdf_buffer = generate_pdf_file(final_no, st.session_state.invoice_items)
     st.session_state.editing_no = final_no
     st.cache_data.clear(); st.rerun()
