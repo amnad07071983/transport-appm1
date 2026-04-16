@@ -88,11 +88,9 @@ def generate_pdf_file(inv_no, items, data_dict=None):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
     
+    # แก้ไข: กำหนดให้เหลือเพียงแผ่นเดียว
     page_labels = [
-        "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)", 
-        "แผ่นที่ 2 - สำเนา - พนักงานขับรถ / ผู้ขนส่ง", 
-        "แผ่นที่ 3 - สำเนา - ฝ่ายบัญชี / ส่วนกลางผู้ส่ง", 
-        "แผ่นที่ 4 - สำเนา - คลังน้ำมัน (ต้นทาง)"
+        "แผ่นที่ 1 - ต้นฉบับ - ผู้รับน้ำมัน (ปลายทาง)"
     ]
 
     def get_val(key, default=""):
@@ -302,7 +300,6 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
         curr = inv_df[inv_df[INV_KEY].astype(str).str.startswith(prefix)]
         if curr.empty: return f"{prefix}-0001"
         
-        # แก้ไข: หาค่าสูงสุด (Max) ของเลขท้าย แทนการเอาบรรทัดสุดท้าย
         suffixes = curr[INV_KEY].apply(lambda x: int(str(x).split('-')[-1]) if '-' in str(x) else 0)
         max_val = suffixes.max()
         return f"{prefix}-{int(max_val)+1:04d}"
@@ -312,22 +309,18 @@ if st.button("💾 บันทึกและอัปเดต PDF", type="pri
 
     if st.session_state.editing_no:
         try:
-            # แก้ไข: อัปเดตแถวเดิม ไม่ลบ
             cell = ws_inv.find(final_no)
             if cell:
                 ws_inv.update(f"A{cell.row}", [new_row_data])
             
-            # ลบรายการสินค้าเก่าเพื่อเขียนใหม่ (เพราะจำนวนรายการสินค้าอาจไม่เท่าเดิม)
             found_items = ws_item.findall(final_no)
             for cell_it in reversed(found_items):
                 ws_item.delete_rows(cell_it.row)
         except Exception as e:
             st.error(f"Error during update: {e}")
     else:
-        # บันทึกแถวใหม่
         ws_inv.append_row(new_row_data)
 
-    # บันทึกรายการสินค้า
     for it in st.session_state.invoice_items:
         ws_item.append_row([final_no, it['product'], it['unit'], it['qty'], it['tank'], it['seal']])
     
